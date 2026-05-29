@@ -1,0 +1,12 @@
+name: rendezvous-finder
+version: 0.1.0
+auth: none
+a2a_endpoint: /a2a/jsonrpc
+capabilities:
+  - rendezvous.tgard
+  - rendezvous.dc_tgard
+contact: arunshar@umn.edu
+description: |
+  Tighter-bound rendezvous detection inside trajectory gaps. Implements
+  TGARD and the dual-convergence DC-TGARD variant from Sharma et al.,
+  SIGSPATIAL 2022. Consumes prisms emitted by space-time-reasoner.

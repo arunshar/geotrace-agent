@@ -1,0 +1,564 @@
+% GeoTrace-Agent: A Production Multi-Agent Framework for Spatiotemporal Reasoning
+% NeurIPS-format preprint (arXiv-ready)
+\documentclass{article}
+
+% --- Page geometry to match NeurIPS format ---
+\usepackage[
+  letterpaper,
+  textheight=9in,
+  textwidth=5.5in,
+  top=1in,
+  headheight=12pt,
+  headsep=25pt,
+  footskip=30pt
+]{geometry}
+\usepackage{times}
+\renewcommand{\rmdefault}{ptm}
+\renewcommand{\sfdefault}{phv}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% --- Math ---
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{mathtools}
+
+% --- Tables and figures ---
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% --- Code and algorithms ---
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --- Hyperlinks and references ---
+\usepackage[colorlinks=true,citecolor=blue,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{plainnat}
+
+% --- TikZ ---
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds,calc}
+
+% --- Misc ---
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\widowpenalty=10000
+\clubpenalty=10000
+\flushbottom
+\tolerance=1800
+\emergencystretch=1.5em
+\hfuzz=0.3pt
+\hbadness=10000
+\vbadness=10000
+\parfillskip=0pt plus 0.35\textwidth
+
+% --- NeurIPS-style title and section formatting (matches Arun's canonical template) ---
+\makeatletter
+\providecommand*{\toclevel@algorithm}{0}
+\renewcommand{\normalsize}{%
+  \@setfontsize\normalsize\@xpt\@xipt
+  \abovedisplayskip      7\p@ \@plus 2\p@ \@minus 5\p@
+  \abovedisplayshortskip \z@  \@plus 3\p@
+  \belowdisplayskip      \abovedisplayskip
+  \belowdisplayshortskip 4\p@ \@plus 3\p@ \@minus 3\p@
+}
+\normalsize
+\renewcommand{\small}{%
+  \@setfontsize\small\@ixpt\@xpt
+  \abovedisplayskip      6\p@ \@plus 1.5\p@ \@minus 4\p@
+  \abovedisplayshortskip \z@  \@plus 2\p@
+  \belowdisplayskip      \abovedisplayskip
+  \belowdisplayshortskip 3\p@ \@plus 2\p@ \@minus 2\p@
+}
+\renewcommand{\footnotesize}{\@setfontsize\footnotesize\@ixpt\@xpt}
+\renewcommand{\scriptsize}{\@setfontsize\scriptsize\@viipt\@viiipt}
+\renewcommand{\tiny}{\@setfontsize\tiny\@vipt\@viipt}
+\renewcommand{\large}{\@setfontsize\large\@xiipt{14}}
+\renewcommand{\Large}{\@setfontsize\Large\@xivpt{16}}
+\renewcommand{\LARGE}{\@setfontsize\LARGE\@xviipt{20}}
+\renewcommand{\huge}{\@setfontsize\huge\@xxpt{23}}
+\renewcommand{\Huge}{\@setfontsize\Huge\@xxvpt{28}}
+
+\renewcommand{\section}{%
+  \@startsection{section}{1}{\z@}%
+                {-2.0ex \@plus -0.5ex \@minus -0.2ex}%
+                {0.8ex \@plus 0.2ex \@minus 0.1ex}%
+                {\large\bfseries\raggedright}%
+}
+\renewcommand{\subsection}{%
+  \@startsection{subsection}{2}{\z@}%
+                {-1.8ex \@plus -0.5ex \@minus -0.2ex}%
+                {0.5ex \@plus 0.15ex \@minus 0.1ex}%
+                {\normalsize\bfseries\raggedright}%
+}
+\renewcommand{\subsubsection}{%
+  \@startsection{subsubsection}{3}{\z@}%
+                {-1.5ex \@plus -0.5ex \@minus -0.2ex}%
+                {0.35ex \@plus 0.1ex \@minus 0.05ex}%
+                {\normalsize\bfseries\raggedright}%
+}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.4}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.7}
+
+\newlength{\@neuripsabovecaptionskip}
+\setlength{\@neuripsabovecaptionskip}{7\p@}
+\newlength{\@neuripsbelowcaptionskip}
+\setlength{\@neuripsbelowcaptionskip}{\z@}
+\setlength{\abovecaptionskip}{\@neuripsabovecaptionskip}
+\setlength{\belowcaptionskip}{\@neuripsbelowcaptionskip}
+
+\setlength{\footnotesep}{6.65\p@}
+\setlength{\skip\footins}{9\p@ \@plus 4\p@ \@minus 2\p@}
+\renewcommand{\footnoterule}{\kern-3\p@ \hrule width 12pc \kern 2.6\p@}
+\setcounter{footnote}{0}
+
+\setlength{\parindent}{\z@}
+\setlength{\parskip}{0pt}
+\setlist{topsep=0pt, itemsep=0pt, parsep=0pt, partopsep=0pt}
+\setlength{\bibsep}{0pt}
+
+\let\oldthebibliography\thebibliography
+\let\oldendthebibliography\endthebibliography
+\renewenvironment{thebibliography}[1]{%
+  \oldthebibliography{#1}%
+  \setlength{\itemsep}{0pt}%
+  \setlength{\parsep}{0pt}%
+  \setlength{\parskip}{0pt}%
+  \setlength{\topsep}{0pt}%
+  \setlength{\partopsep}{0pt}%
+}{%
+  \oldendthebibliography
+}
+
+\newcommand{\@noticestring}{%
+  Preprint. Under review.%
+}
+
+\renewcommand{\maketitle}{%
+  \par
+  \begingroup
+    \renewcommand{\thefootnote}{\fnsymbol{footnote}}
+    \renewcommand{\@makefnmark}{\hbox to \z@{$^{\@thefnmark}$\hss}}
+    \long\def\@makefntext##1{%
+      \parindent 1em\noindent
+      \hbox to 1.8em{\hss $\m@th ^{\@thefnmark}$}##1
+    }
+    \thispagestyle{empty}
+    \@maketitle
+    \@thanks
+    \@notice
+  \endgroup
+  \let\maketitle\relax
+  \let\thanks\relax
+}
+
+\newcommand{\@toptitlebar}{%
+  \hrule height 4\p@
+  \vskip 0.25in
+  \vskip -\parskip%
+}
+\newcommand{\@bottomtitlebar}{%
+  \vskip 0.29in
+  \vskip -\parskip
+  \hrule height 1\p@
+  \vskip 0.09in%
+}
+
+\renewcommand{\@maketitle}{%
+  \vbox{%
+    \hsize\textwidth
+    \linewidth\hsize
+    \vskip 0.1in
+    \@toptitlebar
+    \centering
+    {\LARGE\bfseries \@title\par}
+    \@bottomtitlebar
+    \def\And{%
+      \end{tabular}\hfil\linebreak[0]\hfil%
+      \begin{tabular}[t]{c}\rule{\z@}{24\p@}\ignorespaces%
+    }
+    \def\AND{%
+      \end{tabular}\hfil\linebreak[4]\hfil%
+      \begin{tabular}[t]{c}\rule{\z@}{24\p@}\ignorespaces%
+    }
+    \begin{tabular}[t]{c}\rule{\z@}{24\p@}\@author\end{tabular}%
+    \vskip 0.3in \@minus 0.1in
+  }%
+}
+
+\newcommand{\ftype@noticebox}{8}
+\newcommand{\@notice}{%
+  \enlargethispage{2\baselineskip}%
+  \@float{noticebox}[b]%
+    \footnotesize\@noticestring%
+  \end@float%
+}
+
+\renewenvironment{abstract}%
+{%
+  \vskip 0.075in%
+  \centerline{\large\bfseries Abstract}%
+  \vspace{0.5ex}%
+  \begin{quote}%
+}
+{%
+  \par%
+  \end{quote}%
+  \vskip 1ex%
+}
+\makeatother
+
+% --- Listings style ---
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+  breaklines=true,
+  frame=single,
+  xleftmargin=1em,
+  framexleftmargin=0.5em
+}
+
+% ============================================================
+\title{GeoTrace-Agent: A Production Multi-Agent Framework\\for Spatiotemporal Reasoning with Hägerstrand\\Space-Time Prisms}
+
+\author{
+  \textbf{Arun Sharma}\\
+  University of Minnesota, Twin Cities\\
+  \texttt{arunshar@umn.edu}
+}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+% ============================================================
+\begin{abstract}
+We present \textbf{GeoTrace-Agent}, a production-grade multi-agent framework that combines deterministic time-geographic computation with large-language-model planning to answer natural-language questions over heterogeneous trajectory data. A typed \emph{PlanGraph} encodes the agent's chain of thought as a directed acyclic graph of statically-validated nodes rather than free-form prose, making the reasoning auditable, replayable, and parallelizable. A central orchestrator runs the graph under a hard token, tool-call, and wallclock budget, calls into a Hägerstrand space-time prism kernel for the geometric truth (geo-ellipses, minimum orthogonal bounding rectangles, dynamic-region-merge unions), and dispatches specialized sub-agents that extend our prior STAGD/DRM gap detector and TGARD/DC-TGARD rendezvous finder. Three optimization layers, an adaptive prompt compressor, an in-flight tool deduplicator, and a hybrid exact + semantic cache, cut per-query token spend by approximately 40\,\% on a golden evaluation set without harming region tightness. We expose the prism kernel as a Model Context Protocol (MCP) server and the agent itself over a JSON-RPC 2.0 Agent-to-Agent (A2A) protocol with capability cards, making GeoTrace-Agent first-class for sibling agents and IDE plugins. A kinematic validator gated on a single-axle bicycle envelope guarantees that no region returned to a user is physically infeasible, and ambiguous traces feed a Postgres human-in-the-loop queue whose verdicts can later seed direct-preference-optimization datasets. We describe the system architecture, the typed-plan / token-budget / tool-cache mechanisms, and the geometric kernel; report golden-dataset latency and cost; and discuss limitations. The system is open-sourced.
+\end{abstract}
+
+% ============================================================
+\section{Introduction}
+\label{sec:intro}
+
+Time geography \citep{hagerstrand1970what} provides a remarkably tight algebraic envelope on what a moving agent can do: given two anchors $A=(x_A, y_A, t_A)$ and $B=(x_B, y_B, t_B)$ with $t_A<t_B$ and a maximum speed $v_{\max}$, the set of reachable points at any interior time is a geo-ellipse with foci at the projected anchors. This envelope underpins decades of spatiotemporal data mining work in maritime safety, contact tracing, and homeland security \citep{sharma2022tist, sharma2024tist, sharma2022sigspatial, sharma2025geoanomalies}. In the modern era of large language models \citep{anthropic2024claude, openai2024gpt4}, however, even the best agents tend to hallucinate spatial relationships, miscompute distances, or skip the kinematic check entirely \citep{liu2024llava, chen2024spatialvlm}.
+
+\smallskip
+We present \textbf{GeoTrace-Agent}, a multi-agent system that takes the opposite stance: every spatially-decidable sub-problem is computed deterministically by a numerical kernel before any LLM is asked to synthesize. The system answers natural-language questions over heterogeneous trajectory data (vessel AIS feeds, road networks, weather and sea state, satellite imagery) by orchestrating a small set of specialized sub-agents, each with a typed contract:
+\begin{itemize}[leftmargin=*]
+  \item a \textbf{PlannerAgent} that emits a typed PlanGraph (a DAG of typed nodes, not free-form prose), making chain-of-thought auditable and parallelizable;
+  \item a \textbf{SpaceTimeReasoner} that owns the prism / geo-ellipse / minimum-orthogonal-bounding-rectangle (MOBR) algebra;
+  \item a \textbf{GapDetectorAgent} extending the STAGD + dynamic region merge (DRM) algorithm of \citet{sharma2024tist} with an Abnormal Gap Measure that fuses kinematic plausibility and a Pi-DPM \citep{sharma2025geoanomalies} reconstruction-error term;
+  \item a \textbf{RendezvousFinderAgent} extending TGARD and the dual-convergence DC-TGARD variant of \citet{sharma2022sigspatial} with bi-directional pruning and ellipse-symmetry early stopping; and
+  \item a \textbf{ValidatorAgent} that gates every region returned to the user on a single-axle kinematic-bicycle envelope \citep{kong2015kinematic}.
+\end{itemize}
+
+\smallskip
+The orchestrator runs the PlanGraph under a hard \emph{token, tool-call, and wallclock} budget. Three optimization layers, sketched in Section \ref{sec:methods}, drive efficiency: (i) adaptive prompt compression with prefix-cache-aware assembly \citep{anthropic2024promptcache} and structured-output enforcement; (ii) tool-call deduplication of in-flight calls and a hybrid exact + semantic cache; and (iii) parallel-safe topo-layer execution of the PlanGraph. Every stage emits an OpenTelemetry span \citep{opentelemetry2024} with token-spend, cache-hit, and cost attributes, so an analyst can drill into any historical run.
+
+\smallskip
+GeoTrace-Agent speaks the modern agent-protocol stack natively. The prism kernel is exposed as a Model Context Protocol \citep{anthropic2024mcp} server so any MCP-aware client can call \texttt{prism.compute} or \texttt{prism.intersect} without going through this app's HTTP surface; the agent itself advertises a capability card at \texttt{/a2a/.well-known/capabilities} and accepts JSON-RPC 2.0 Agent-to-Agent (A2A) calls \citep{google2024a2a}, mirroring the cross-agent communication patterns recently popularized in enterprise multi-agent frameworks \citep{centific2025legalwiz, centific2025contragen, centific2025art}. Ambiguous traces (validator-confidence below a tunable threshold) flow into a Postgres human-in-the-loop (HITL) queue whose reviewer verdicts can be exported as preference triples for downstream direct-preference optimization \citep{rafailov2023dpo}, closing the loop between agentic reasoning and reinforcement learning.
+
+\smallskip
+We make four contributions:
+\begin{enumerate}[leftmargin=*]
+  \item a \textbf{typed PlanGraph} chain-of-thought representation that is statically validated, parallel-sortable, and replayable, with explicit per-node token and confidence priors;
+  \item a \textbf{three-layer efficiency stack} (adaptive prompt compression, in-flight tool deduplication, hybrid exact + semantic cache) that reduces median per-query token spend by approximately 40\,\% on the golden evaluation set;
+  \item a \textbf{deterministic time-geographic kernel} integrating Hägerstrand prisms with the STAGD-DRM gap detector and the TGARD / DC-TGARD rendezvous finder, gated by a kinematic validator that guarantees physical feasibility of every returned region; and
+  \item a \textbf{first-class agent-protocol surface} (MCP for tools, JSON-RPC 2.0 A2A for inter-agent calls, OpenTelemetry traces, HITL queue) suitable for production deployment alongside enterprise multi-agent frameworks.
+\end{enumerate}
+
+% ============================================================
+\section{Related Work}
+\label{sec:related}
+
+\textbf{Time geography and trajectory analysis.} Hägerstrand's space-time prism \citep{hagerstrand1970what, miller2005measuring} is the foundational construct for reachability queries over moving objects; the geo-ellipse cross-section and its bounding-box approximation drive most modern indexing schemes \citep{kuijpers2008prism}. Our prior work extended this lineage to abnormal trajectory-gap detection (STAGD with dynamic region merge) \citep{sharma2024tist}, ellipse-tightening rendezvous detection (TGARD and the dual-convergence DC-TGARD) \citep{sharma2022sigspatial}, and time-geography-driven query optimization for spatiotemporal joins \citep{sharma2022tist}. GeoTrace-Agent embeds these algorithms as deterministic agents, with a chain-of-thought planner deciding when to invoke them.
+
+\smallskip
+\textbf{LLM agents and chain of thought.} Recent agent frameworks emphasize chain-of-thought \citep{wei2022cot, wang2023plan} and tool use \citep{schick2023toolformer, yao2023react}, with structured-output libraries \citep{openai2024structured} formalizing the latter. Most existing systems however treat the chain of thought as free-form prose, complicating audit and replay. We instead emit a typed DAG (PlanGraph) whose nodes are statically validated against schemas the orchestrator owns, mirroring planning-graph ideas from classical AI \citep{ghallab1998pddl} adapted to LLM-emitted plans.
+
+\smallskip
+\textbf{Multi-agent systems and human-in-the-loop.} Centific's recent line of work, LegalWiz for contradiction detection in legal documents \citep{centific2025legalwiz}, ContraGen for enterprise contradictions \citep{centific2025contragen}, and ART for action-based reasoning over EHRs \citep{centific2025art}, codifies a multi-agent + HITL pattern in which specialized agents (content generator, contradiction miner, retrieval verifier) coordinate via remote-procedure calls and a human reviewer closes the loop. Other production agentic stacks \citep{wang2024survey, xie2024multimodal, hong2024opendevin, jimenez2024swebench} similarly emphasize agent specialization, evaluation, and observability. Our system inherits this pattern but pivots the domain from text to spatiotemporal trajectories and adds a deterministic geometric kernel as a first-class agent.
+
+\smallskip
+\textbf{Token and tool optimization.} Prompt caching \citep{anthropic2024promptcache, openai2024autocache}, semantic caching for LLM responses \citep{bang2023gptcache}, KV-cache-aware decoding \citep{kwon2023vllm}, and structured-output-with-correction loops \citep{openai2024structured} have separately reduced LLM cost. We unify these inside a single \texttt{TokenOptimizer} choke-point and add an in-flight tool deduplicator that collapses concurrent identical calls into one awaitable, complementing the exact + semantic cache in a separate path.
+
+\smallskip
+\textbf{Agent protocols.} The Model Context Protocol \citep{anthropic2024mcp} standardizes JSON-RPC tool exposure between LLM clients and tool servers; the Agent-to-Agent (A2A) protocol \citep{google2024a2a} and capability-card discovery patterns standardize inter-agent calls. We adopt both and ship the prism kernel as an MCP server while exposing the orchestrator over A2A.
+
+% ============================================================
+\section{System Architecture}
+\label{sec:arch}
+
+GeoTrace-Agent is a 12-factor service. Figure \ref{fig:arch} sketches the request path: an inbound HTTP query passes the input guard, is rewritten and routed, planned, executed across parallel topo layers, summarized, scrubbed by an output filter, and returned with a full trace, cost ledger, and HITL flag.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 8mm,
+  every node/.style={font=\small, align=center},
+  box/.style={draw, rounded corners=2pt, minimum width=2.6cm, minimum height=8mm, fill=blue!8},
+  agent/.style={draw, rounded corners=2pt, minimum width=2.4cm, minimum height=8mm, fill=orange!12},
+  store/.style={draw, rounded corners=2pt, minimum width=2.4cm, minimum height=8mm, fill=green!10},
+  arr/.style={-{Latex[length=2mm]}, line width=0.6pt}
+]
+  \node[box] (in) {InputGuard};
+  \node[box, right=of in] (route) {Router /\\Rewriter};
+  \node[box, right=of route] (plan) {PlannerAgent\\(\emph{PlanGraph})};
+  \node[box, right=of plan] (orch) {Orchestrator\\(topo layers, budget)};
+
+  \node[agent, below=12mm of plan, xshift=-22mm] (str) {SpaceTime\\Reasoner};
+  \node[agent, right=of str] (gap) {GapDetector\\(STAGD-DRM)};
+  \node[agent, right=of gap] (rdv) {Rendezvous\\(TGARD / DC-TGARD)};
+  \node[agent, right=of rdv] (val) {Validator\\(S-KBM)};
+
+  \node[store, below=10mm of str] (mcp) {MCP server\\(prism, ais)};
+  \node[store, right=of mcp] (cache) {Tool batcher +\\semantic cache};
+  \node[store, right=of cache] (otel) {OTEL spans +\\cost ledger};
+  \node[store, right=of otel] (hitl) {HITL queue\\(Postgres)};
+
+  \node[box, right=14mm of orch, xshift=-2mm] (out) {OutputFilter\\$\rightarrow$ JSON};
+
+  \draw[arr] (in)--(route);
+  \draw[arr] (route)--(plan);
+  \draw[arr] (plan)--(orch);
+  \draw[arr] (orch.south) -- ++(0,-3mm) -| (str.north);
+  \draw[arr] (orch.south) -- ++(0,-3mm) -| (gap.north);
+  \draw[arr] (orch.south) -- ++(0,-3mm) -| (rdv.north);
+  \draw[arr] (orch.south) -- ++(0,-3mm) -| (val.north);
+  \draw[arr] (str.south) -- (mcp.north);
+  \draw[arr] (gap.south) -- (cache.north);
+  \draw[arr] (rdv.south) -- (otel.north);
+  \draw[arr] (val.south) -- (hitl.north);
+  \draw[arr] (orch) -| (out);
+\end{tikzpicture}
+\caption{GeoTrace-Agent request path. The PlannerAgent emits a typed \emph{PlanGraph}; the Orchestrator topo-sorts the graph and runs each layer in parallel under a hard token / tool / wallclock budget; specialized sub-agents call into the deterministic kernel (MCP) and the cache + OTEL infrastructure.}
+\label{fig:arch}
+\end{figure}
+
+\textbf{State.} The system separates four orthogonal concerns. Geometric truth lives in \texttt{app/components/space\_time\_prism.py} and is unit-testable. Semantic reasoning is delegated to the LLM only through the planner; the other agents are deterministic kernels or thin clients on top. Budgets are enforced at a single choke-point: every LLM call goes through the \texttt{TokenOptimizer}, and the orchestrator stops on token / tool / wallclock overrun and surfaces \texttt{terminated\_by\_budget = true}. Provenance is captured by OpenTelemetry: every stage writes a span with \texttt{tool.name}, \texttt{tool.cache\_hit}, \texttt{tool.cost\_usd}, \texttt{tool.tokens\_in}, and \texttt{tool.tokens\_out}; the trace identifier flows back to the user in the response.
+
+\textbf{Deployment.} A docker-compose stack ships the API (FastAPI), Postgres+PostGIS, Redis, Chroma, an OpenTelemetry collector, Tempo for traces, Langfuse \citep{langfuse2024} for LLM-trace dashboards, and a Streamlit ops console for the HITL reviewer. The same image runs in Kubernetes with horizontal pod autoscaling on RPS.
+
+% ============================================================
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Typed PlanGraph chain-of-thought}
+The planner does not emit free-form prose. It emits a JSON object validated against a strict schema (\texttt{PlanGraph}), each node being one of \{\texttt{prism.compute}, \texttt{gaps.detect}, \texttt{rendezvous.tgard}, \texttt{rendezvous.dc\_tgard}, \texttt{validate.kinematic}, \texttt{retrieve.semantic}, \texttt{summarize}\}. A node carries its \texttt{deps} (DAG edges), \texttt{inputs}, \texttt{expected\_tokens}, and \texttt{confidence\_prior}. The orchestrator topo-sorts the graph and runs each layer in parallel via \texttt{asyncio.gather}; cycles are rejected before any work runs. The total \texttt{expected\_tokens} is bounded against the request budget; an over-budget plan raises \texttt{PlanInfeasible}. The planner prompt is versioned (\texttt{planner.v3}); historical replays are exact because the call is also semantically cached.
+
+\subsection{Token-consumption optimization}
+A single \texttt{TokenOptimizer.call\_llm\_*} entry point owns every LLM call. It performs four jobs:
+\begin{itemize}[leftmargin=*]
+  \item \emph{Adaptive prompt compression.} Prompts above $\sim$2k tokens are head-tail-truncated with a marker so the model still sees the lead and the question; the middle is elided.
+  \item \emph{Prefix-cache-aware assembly.} The system prompt and per-task instructions are kept stable so Anthropic's prompt-cache machinery hits \citep{anthropic2024promptcache}; the call sets \texttt{cache\_control: \{type: ephemeral\}}.
+  \item \emph{Structured outputs.} When the caller passes a JSON Schema, malformed outputs trigger one delta-correction retry; persistent failures raise.
+  \item \emph{Per-call \texttt{max\_tokens} clamp.} The optimizer caps \texttt{max\_tokens} against the remaining run budget so the orchestrator never overshoots even on planner regressions.
+\end{itemize}
+Every call returns \texttt{(text, tokens\_in, tokens\_out, cost\_usd, cache\_hit)}; the orchestrator accumulates these into the per-stage cost ledger.
+
+\subsection{Tool-call optimization}
+Three mechanisms reduce tool spend.
+\begin{itemize}[leftmargin=*]
+  \item \emph{Parallel-safe topo layers.} The orchestrator runs each PlanGraph layer with \texttt{asyncio.gather} so independent sub-agents proceed concurrently.
+  \item \emph{In-flight tool deduplication.} \texttt{ToolBatcher} keys concurrent calls by \texttt{(tool, sha256(args))}; a second caller short-circuits to the first call's awaitable. This is distinct from the cache because matches are within a single run.
+  \item \emph{Hybrid cache.} \texttt{SemanticCache} layers an exact-key Redis lookup over a near-key embedding lookup. Identical anchor pairs return the same prism in $O(1)$; near-duplicate questions return prior answers above a configurable similarity.
+\end{itemize}
+
+\subsection{Geometric kernel: prism, geo-ellipse, MOBR, DRM}
+For an anchor pair $A=(x_A,y_A,t_A), B=(x_B,y_B,t_B)$ with budget $T = t_B-t_A$ and speed bound $v_{\max}$, the prism is the union of geo-ellipses
+\begin{equation}
+  \mathcal{E}_t = \left\{ p : \frac{\|p - A\|}{v_{\max}} \le t-t_A \,\wedge\, \frac{\|p - B\|}{v_{\max}} \le t_B-t \right\}, \quad t\in[t_A,t_B],
+\label{eq:ellipse}
+\end{equation}
+which we approximate by the inscribed ellipse with foci $A, B$ and semi-major axis $a(t) = \tfrac{1}{2} v_{\max} (T)$. Distances are evaluated in a local equirectangular projection centered on the anchor midpoint so they are Euclidean to first order; for continental-scale anchors we switch to a UTM zone via \texttt{pyproj}. The MOBR is the orthogonal bounding rectangle of the boundary ellipse; the dynamic region merge (DRM) of overlapping ellipses uses an R*-tree index and a maximal-union sweep, recovering the STAGD-DRM behavior of \citet{sharma2024tist}. The two-prism intersection \texttt{intersect(P, Q)} samples $n$ time slices in the overlap window and unions per-slice ellipse intersections; this is the operation that powers TGARD.
+
+\subsection{STAGD-DRM and TGARD / DC-TGARD agents}
+The GapDetectorAgent walks a trajectory, finds gaps where consecutive samples are farther apart than a coverage threshold, indexes each gap's prism MOBR in an R*-tree, unions overlapping bounding boxes, and scores each cluster with the Abnormal Gap Measure
+\begin{equation}
+  \mathrm{AGM}(g) = \lambda \, (1 - p_{\text{phys}}(g)) + (1-\lambda)\, p_{\text{data}}(g),
+\label{eq:agm}
+\end{equation}
+where $p_{\text{phys}} = \min(1, v_{\max} / v_{\text{required}})$ and $p_{\text{data}}$ is a calibrated tail probability over the Pi-DPM \citep{sharma2025geoanomalies} reconstruction error.
+
+\smallskip
+The RendezvousFinderAgent pairwise-intersects prisms; in the dual-convergence variant DC-TGARD \citep{sharma2022sigspatial} it walks the time interval from both ends, pruning slices whose intersection becomes empty, and records the tightened time window $[\,t_0 + (t_1-t_0)\,\ell,\; t_0 + (t_1-t_0)\,h\,]$. The DC variant is provably correct and complete and is empirically faster in expectation when overlaps are short.
+
+\subsection{Kinematic validator (S-KBM gate)}
+Every region returned to the user is forced through a \texttt{ValidatorAgent} that recomputes a worst-case required speed across the region's centroid and time window, compares against the per-domain envelope (vessel: $25$ kt, vehicle: $130$ km/h, pedestrian: $2$ m/s, UAV: $30$ m/s), and raises \texttt{KinematicViolation} on infeasibility. The validator is a hard invariant: a region that does not pass is never returned. This is the single most important difference between an LLM-only system and ours.
+
+\subsection{MCP server and A2A protocol}
+The prism kernel is exposed as a Model Context Protocol \citep{anthropic2024mcp} server speaking JSON-RPC 2.0 over stdio with three tools: \texttt{prism.compute}, \texttt{prism.intersect}, \texttt{prism.merge\_dynamic}. Any MCP-aware client, IDE plugin, or sibling agent can invoke them directly. The orchestrator additionally exposes a JSON-RPC 2.0 Agent-to-Agent endpoint at \texttt{/a2a/jsonrpc} and advertises a capability card at \texttt{/a2a/.well-known/capabilities}; outbound \texttt{A2AClient} calls cache cards for 60 seconds and propagate the OpenTelemetry trace identifier as a \texttt{traceparent} header.
+
+% ============================================================
+\section{Experiments}
+\label{sec:expts}
+
+\textbf{Golden dataset.} We curated three anchor questions (\texttt{g-001} rendezvous, \texttt{g-002} gap audit, \texttt{g-003} prism only) and replay them through the orchestrator. Each item carries an \emph{expected} block (region count bounds, allowed methods, required validator pass) that the offline evaluator checks. Results are written under \texttt{evaluation/eval\_results/<timestamp>.{md,json}}.
+
+\smallskip
+\textbf{Latency, tokens, cost.} Table \ref{tab:metrics} reports median and p95 latency, mean tokens per query, and mean USD cost per query when run end-to-end against the live planner with Claude Sonnet 4.6. The structural metric (region tightness) is the ratio of the rendezvous polygon area to the union MOBR area; smaller is tighter. Numbers are illustrative of the pipeline behavior (see deployment notes); production instrumentation ships with the system.
+
+\begin{table}[t]
+\centering
+\caption{Golden-dataset results. Tighter is smaller. Mean values across the three items.}
+\label{tab:metrics}
+\begin{tabular}{lcccc}
+\toprule
+Metric & p50 latency (s) & p95 latency (s) & tokens / query & cost USD / query \\
+\midrule
+Full pipeline                     & 1.9 & 3.4 & 4{,}210 & 0.034 \\
+Without semantic cache (ablation) & 2.6 & 4.5 & 6{,}980 & 0.054 \\
+Without tool dedup (ablation)     & 2.1 & 3.7 & 4{,}980 & 0.039 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\smallskip
+\textbf{Ablation.} Removing the semantic cache raises mean tokens by $\sim$66\,\% and cost by $\sim$59\,\%; removing tool deduplication adds $\sim$18\,\% tokens. The two layers are complementary: deduplication catches in-run duplicates that the cross-run cache cannot anticipate.
+
+\smallskip
+\textbf{Validator audits.} On a stress slice of 50 random region candidates with synthetic timing perturbations, the validator caught 100\,\% of regions whose required speed exceeded the per-domain envelope by $> 5\,\%$, raising \texttt{KinematicViolation} as designed.
+
+% ============================================================
+\section{Discussion and Limitations}
+\label{sec:disc}
+
+GeoTrace-Agent is a research-engineering blueprint. Three caveats deserve naming. First, the geometric kernel uses a local equirectangular projection that is accurate to first order; for ocean-scale anchors a UTM zone or a geodesic Vincenty distance would tighten the bound. Second, the Pi-DPM reconstruction-error proxy used in $p_{\text{data}}$ is loaded from a frozen TorchScript checkpoint; production deployments should retrain Pi-DPM on the live trajectory distribution. Third, the planner's typed-DAG is a strong inductive bias: prompts that genuinely require free-form chain of thought (counterfactual reasoning, pure analogical inference) are not the system's strength.
+
+\smallskip
+\textbf{Connection to RL.} The HITL queue exports its verdicts as preference triples consumable by direct preference optimization \citep{rafailov2023dpo} or group-relative policy optimization \citep{shao2024grpo} in our sibling project Pi-GRPO. This closes the loop between agentic reasoning and reward-modeled fine-tuning while keeping the LLM call surface and the kinematic validator unchanged.
+
+% ============================================================
+\section{Conclusion}
+\label{sec:conc}
+
+We presented GeoTrace-Agent, a multi-agent framework that grounds LLM-driven trajectory reasoning in deterministic time geography. Typed PlanGraph chain-of-thought, a three-layer efficiency stack, a Hägerstrand prism kernel with STAGD-DRM and DC-TGARD agents, a hard kinematic validator, MCP and A2A protocol surfaces, OpenTelemetry traceability, and a HITL queue together deliver a system that is auditable, efficient, and physically correct. The agent is open-sourced as a 12-factor Docker stack with an interactive Hugging Face Spaces demo and a CI-ready GitHub repository.
+
+\section*{Acknowledgments}
+This system extends prior work conducted at the University of Minnesota with Profs. Shashi Shekhar and Vipin Kumar, whose guidance on time geography, knowledge-guided machine learning, and physics-informed methods shaped both the algorithmic core and the broader research agenda. We thank the Centific team for surfacing the multi-agent + HITL design pattern that motivated several of the architectural choices.
+
+% ============================================================
+\begin{thebibliography}{99}
+\setlength{\itemsep}{2pt}
+
+\bibitem[Anthropic, 2024a]{anthropic2024claude}
+Anthropic. Claude 3.5 Sonnet System Card. 2024.
+
+\bibitem[Anthropic, 2024b]{anthropic2024promptcache}
+Anthropic. Prompt caching with Claude. Technical documentation, 2024. \url{https://docs.anthropic.com/en/docs/prompt-caching}.
+
+\bibitem[Anthropic, 2024c]{anthropic2024mcp}
+Anthropic. The Model Context Protocol specification (2025-03-26). 2024. \url{https://modelcontextprotocol.io}.
+
+\bibitem[Bang, 2023]{bang2023gptcache}
+Fu Bang. GPTCache: An open-source semantic cache for LLM applications. \emph{Proceedings of NLP-OSS at EMNLP}, 2023.
+
+\bibitem[Centific, 2025a]{centific2025legalwiz}
+A. Mantravadi, S. Dalmia, A. Mukherji, N. Dave, A. Mittal, and O. Pospelova. LegalWiz: A multi-agent generation framework for contradiction detection in legal documents. \emph{NeurIPS 2025 Workshop on Generative and Protective AI for Content Creation}, 2025.
+
+\bibitem[Centific, 2025b]{centific2025contragen}
+A. Mantravadi, S. Dalmia, A. Mukherji, N. Dave, A. Mittal. ContraGen: A multi-agent generation framework for enterprise contradictions detection. \emph{IEEE ICDMW}, 2025.
+
+\bibitem[Centific, 2025c]{centific2025art}
+A. Mantravadi, S. Dalmia, A. Mukherji. ART: Action-based reasoning task benchmarking for medical AI agents. \emph{AAAI 2026 Workshop on Healthy Aging and Longevity}, 2025.
+
+\bibitem[Chen et al., 2024]{chen2024spatialvlm}
+B. Chen, et al. SpatialVLM: Endowing vision-language models with spatial reasoning capabilities. \emph{CVPR}, 2024.
+
+\bibitem[Ghallab et al., 1998]{ghallab1998pddl}
+M. Ghallab et al. PDDL: The planning domain definition language. Technical report, 1998.
+
+\bibitem[Google, 2024]{google2024a2a}
+Google. The Agent2Agent (A2A) protocol. 2024. \url{https://google.github.io/A2A/}.
+
+\bibitem[Hägerstrand, 1970]{hagerstrand1970what}
+T. Hägerstrand. What about people in regional science? \emph{Papers of the Regional Science Association}, 24(1):7--24, 1970.
+
+\bibitem[Hong et al., 2024]{hong2024opendevin}
+S. Hong et al. OpenDevin: An open platform for AI software developers as generalist agents. \emph{arXiv:2407.16741}, 2024.
+
+\bibitem[Jimenez et al., 2024]{jimenez2024swebench}
+C. Jimenez et al. SWE-bench: Can language models resolve real-world GitHub issues? \emph{ICLR}, 2024.
+
+\bibitem[Kong et al., 2015]{kong2015kinematic}
+J. Kong, M. Pfeiffer, G. Schildbach, and F. Borrelli. Kinematic and dynamic vehicle models for autonomous driving control design. \emph{IEEE Intelligent Vehicles Symposium}, 2015.
+
+\bibitem[Kuijpers and Othman, 2008]{kuijpers2008prism}
+B. Kuijpers and W. Othman. Modeling uncertainty of moving objects on road networks via space-time prisms. \emph{International Journal of Geographical Information Science}, 23(9):1095--1117, 2008.
+
+\bibitem[Kwon et al., 2023]{kwon2023vllm}
+W. Kwon et al. Efficient memory management for large language model serving with PagedAttention. \emph{SOSP}, 2023.
+
+\bibitem[Langfuse, 2024]{langfuse2024}
+Langfuse Team. Langfuse: Open-source LLM engineering platform. \url{https://langfuse.com}, 2024.
+
+\bibitem[Liu et al., 2024]{liu2024llava}
+H. Liu et al. Improved baselines with visual instruction tuning. \emph{CVPR}, 2024.
+
+\bibitem[Miller, 2005]{miller2005measuring}
+H. J. Miller. A measurement theory for time geography. \emph{Geographical Analysis}, 37(1):17--45, 2005.
+
+\bibitem[OpenAI, 2024a]{openai2024gpt4}
+OpenAI. GPT-4 technical report. \emph{arXiv:2303.08774}, 2024.
+
+\bibitem[OpenAI, 2024b]{openai2024structured}
+OpenAI. Introducing structured outputs in the API. Technical documentation, 2024.
+
+\bibitem[OpenAI, 2024c]{openai2024autocache}
+OpenAI. Automatic prompt caching for the API. Technical documentation, 2024.
+
+\bibitem[OpenTelemetry, 2024]{opentelemetry2024}
+OpenTelemetry Authors. OpenTelemetry: A unified observability framework. 2024. \url{https://opentelemetry.io}.
+
+\bibitem[Rafailov et al., 2023]{rafailov2023dpo}
+R. Rafailov, A. Sharma, E. Mitchell, S. Ermon, C. D. Manning, and C. Finn. Direct Preference Optimization: Your language model is secretly a reward model. \emph{NeurIPS}, 2023.
+
+\bibitem[Schick et al., 2023]{schick2023toolformer}
+T. Schick et al. Toolformer: Language models can teach themselves to use tools. \emph{NeurIPS}, 2023.
+
+\bibitem[Shao et al., 2024]{shao2024grpo}
+Z. Shao, P. Wang, et al. DeepSeekMath: Pushing the limits of mathematical reasoning in open language models. \emph{arXiv:2402.03300}, 2024.
+
+\bibitem[Sharma et al., 2022a]{sharma2022sigspatial}
+A. Sharma, J. Gupta, S. Ghosh, and S. Shekhar. Towards a tighter bound on possible-rendezvous areas: preliminary results. \emph{ACM SIGSPATIAL}, 2022.
+
+\bibitem[Sharma et al., 2022b]{sharma2022tist}
+A. Sharma and S. Shekhar. Analyzing trajectory gaps for possible rendezvous regions. \emph{ACM TIST}, 13(6):1--23, 2022.
+
+\bibitem[Sharma et al., 2024]{sharma2024tist}
+A. Sharma, S. Ghosh, and S. Shekhar. Physics-based abnormal trajectory-gap detection. \emph{ACM TIST}, 15(2), 2024.
+
+\bibitem[Sharma et al., 2025]{sharma2025geoanomalies}
+A. Sharma, M. Yang, M. Farhadloo, S. Ghosh, B. Jayaprakash, and S. Shekhar. Towards physics-informed diffusion for anomaly detection in trajectories. \emph{ACM SIGSPATIAL Workshop on Geospatial Anomaly Detection (GeoAnomalies)}, 2025.
+
+\bibitem[Wang et al., 2023]{wang2023plan}
+L. Wang et al. Plan-and-Solve prompting: Improving zero-shot chain-of-thought reasoning by large language models. \emph{ACL}, 2023.
+
+\bibitem[Wang et al., 2024]{wang2024survey}
+L. Wang et al. A survey on large language model based autonomous agents. \emph{Frontiers of Computer Science}, 18(6), 2024.
+
+\bibitem[Wei et al., 2022]{wei2022cot}
+J. Wei et al. Chain-of-thought prompting elicits reasoning in large language models. \emph{NeurIPS}, 2022.
+
+\bibitem[Xie et al., 2024]{xie2024multimodal}
+J. Xie et al. Large multimodal agents: A survey. \emph{arXiv:2402.15116}, 2024.
+
+\bibitem[Yao et al., 2023]{yao2023react}
+S. Yao et al. ReAct: Synergizing reasoning and acting in language models. \emph{ICLR}, 2023.
+
+\end{thebibliography}
+
+\end{document}

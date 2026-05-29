@@ -1,0 +1,45 @@
+{
+  "version": "0.1.0",
+  "items": [
+    {
+      "id": "g-001",
+      "question": "Could VESSEL-1234 have rendezvoused with VESSEL-9876 between 2026-01-15T06:00Z and 12:00Z near 56N 162W?",
+      "anchors": [
+        {"lat": 56.10, "lon": -162.05, "t": "2026-01-15T06:00:00Z"},
+        {"lat": 56.30, "lon": -162.40, "t": "2026-01-15T12:00:00Z"},
+        {"lat": 56.12, "lon": -162.08, "t": "2026-01-15T06:00:00Z"},
+        {"lat": 56.28, "lon": -162.34, "t": "2026-01-15T12:00:00Z"}
+      ],
+      "domain": "vessel",
+      "expected": {
+        "regions_min": 1,
+        "regions_max": 4,
+        "method_in": ["TGARD", "DC-TGARD"],
+        "kinematic_pass": true
+      }
+    },
+    {
+      "id": "g-002",
+      "question": "Did VESSEL-1234 have a coverage gap consistent with signal denial near the Aleutian shelf on 2026-01-15?",
+      "anchors": null,
+      "domain": "vessel",
+      "expected": {
+        "n_gaps_min": 1,
+        "agm_threshold": 0.6
+      }
+    },
+    {
+      "id": "g-003",
+      "question": "Compute the prism between (56.10, -162.05, 06:00Z) and (56.30, -162.40, 12:00Z).",
+      "anchors": [
+        {"lat": 56.10, "lon": -162.05, "t": "2026-01-15T06:00:00Z"},
+        {"lat": 56.30, "lon": -162.40, "t": "2026-01-15T12:00:00Z"}
+      ],
+      "domain": "vessel",
+      "expected": {
+        "feasible": true,
+        "polygon_required": true
+      }
+    }
+  ]
+}

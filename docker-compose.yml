@@ -1,0 +1,59 @@
+services:
+  api:
+    build: { context: ., dockerfile: app/Dockerfile }
+    ports: ["8000:8000"]
+    env_file: [.env]
+    depends_on: [postgres, redis, chroma, otel-collector]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build: { context: ./frontend }
+    ports: ["8501:8501"]
+    depends_on: [api]
+    environment: { GEOTRACE_API_URL: "http://api:8000" }
+
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: geotrace
+      POSTGRES_PASSWORD: geotrace
+      POSTGRES_DB: geotrace
+    volumes: ["pg:/var/lib/postgresql/data"]
+    ports: ["5432:5432"]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  chroma:
+    image: chromadb/chroma:0.5.5
+    ports: ["8001:8000"]
+    volumes: ["chroma:/chroma/.chroma"]
+
+  langfuse:
+    image: langfuse/langfuse:2.84
+    environment:
+      DATABASE_URL: postgresql://geotrace:geotrace@postgres:5432/geotrace
+      NEXTAUTH_SECRET: dev-only-not-for-prod
+      SALT: dev-only-not-for-prod
+      NEXTAUTH_URL: http://localhost:3000
+    ports: ["3000:3000"]
+    depends_on: [postgres]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.103.1
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes: ["./observability/otel-config.yaml:/etc/otel/config.yaml:ro"]
+    ports: ["4317:4317", "4318:4318"]
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes: ["./observability/tempo.yaml:/etc/tempo.yaml:ro"]
+    ports: ["3200:3200"]
+
+volumes: { pg: {}, chroma: {} }

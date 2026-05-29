@@ -1,0 +1,14 @@
+name: space-time-reasoner
+version: 0.1.0
+auth: none
+a2a_endpoint: /a2a/jsonrpc
+capabilities:
+  - prism.compute
+  - prism.intersect
+  - prism.merge_dynamic
+contact: arunshar@umn.edu
+description: |
+  Deterministic geometric reasoner. Computes Hägerstrand space-time
+  prisms, geo-ellipses, MOBRs, and DRM merges for trajectory anchors.
+  No LLM calls; outputs are referentially transparent in (anchors,
+  v_max, time-bound).
