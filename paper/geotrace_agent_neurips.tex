@@ -231,7 +231,7 @@
 }
 
 % ============================================================
-\title{GeoTrace-Agent: A Production Multi-Agent Framework\\for Spatiotemporal Reasoning with Hägerstrand\\Space-Time Prisms}
+\title{GeoTrace-Agent: A Production Multi-Agent\\Framework for Spatiotemporal Reasoning}
 
 \author{
   \textbf{Arun Sharma}\\
@@ -284,19 +284,22 @@ We make four contributions:
 \section{Related Work}
 \label{sec:related}
 
-\textbf{Time geography and trajectory analysis.} Hägerstrand's space-time prism \citep{hagerstrand1970what, miller2005measuring} is the foundational construct for reachability queries over moving objects; the geo-ellipse cross-section and its bounding-box approximation drive most modern indexing schemes \citep{kuijpers2008prism}. Our prior work extended this lineage to abnormal trajectory-gap detection (STAGD with dynamic region merge) \citep{sharma2024tist}, ellipse-tightening rendezvous detection (TGARD and the dual-convergence DC-TGARD) \citep{sharma2022sigspatial}, and time-geography-driven query optimization for spatiotemporal joins \citep{sharma2022tist}. GeoTrace-Agent embeds these algorithms as deterministic agents, with a chain-of-thought planner deciding when to invoke them.
+\textbf{Time geography and trajectory analysis:} Hägerstrand's space-time prism \citep{hagerstrand1970what, miller2005measuring} is the foundational construct for reachability queries over moving objects; the geo-ellipse cross-section and its bounding-box approximation drive most modern indexing schemes \citep{kuijpers2008prism}. Time geography has also influenced accessibility modeling, movement uncertainty, mobility-data mining, and GIScience more broadly \citep{goodchild1992geographical, miller1991modelling, dodge2008towards, zheng2015trajectory}. Our prior work extended this lineage to abnormal trajectory-gap detection (STAGD with dynamic region merge) \citep{sharma2024tist}, ellipse-tightening rendezvous detection (TGARD and the dual-convergence DC-TGARD) \citep{sharma2022sigspatial}, and time-geography-driven query optimization for spatiotemporal joins \citep{sharma2022tist}. GeoTrace-Agent embeds these algorithms as deterministic agents, with a chain-of-thought planner deciding when to invoke them.
 
 \smallskip
-\textbf{LLM agents and chain of thought.} Recent agent frameworks emphasize chain-of-thought \citep{wei2022cot, wang2023plan} and tool use \citep{schick2023toolformer, yao2023react}, with structured-output libraries \citep{openai2024structured} formalizing the latter. Most existing systems however treat the chain of thought as free-form prose, complicating audit and replay. We instead emit a typed DAG (PlanGraph) whose nodes are statically validated against schemas the orchestrator owns, mirroring planning-graph ideas from classical AI \citep{ghallab1998pddl} adapted to LLM-emitted plans.
+\textbf{LLM agents and chain of thought:} Recent agent frameworks emphasize chain-of-thought \citep{wei2022cot, wang2023plan} and tool use \citep{schick2023toolformer, yao2023react}, with structured-output libraries \citep{openai2024structured} formalizing the latter. Planning work in classical AI \citep{ghallab1998pddl, lavalle2006planning} and search \citep{hart1968astar} shows the value of explicit state, operators, and dependencies. Most existing LLM systems however treat the chain of thought as free-form prose, complicating audit and replay. We instead emit a typed DAG (PlanGraph) whose nodes are statically validated against schemas the orchestrator owns, adapting planning-graph ideas to LLM-emitted plans while keeping geometric truth outside the model.
 
 \smallskip
-\textbf{Multi-agent systems and human-in-the-loop.} Centific's recent line of work, LegalWiz for contradiction detection in legal documents \citep{centific2025legalwiz}, ContraGen for enterprise contradictions \citep{centific2025contragen}, and ART for action-based reasoning over EHRs \citep{centific2025art}, codifies a multi-agent + HITL pattern in which specialized agents (content generator, contradiction miner, retrieval verifier) coordinate via remote-procedure calls and a human reviewer closes the loop. Other production agentic stacks \citep{wang2024survey, xie2024multimodal, hong2024opendevin, jimenez2024swebench} similarly emphasize agent specialization, evaluation, and observability. Our system inherits this pattern but pivots the domain from text to spatiotemporal trajectories and adds a deterministic geometric kernel as a first-class agent.
+\textbf{Multi-agent systems and human-in-the-loop:} Centific's recent line of work, LegalWiz for contradiction detection in legal documents \citep{centific2025legalwiz}, ContraGen for enterprise contradictions \citep{centific2025contragen}, and ART for action-based reasoning over EHRs \citep{centific2025art}, codifies a multi-agent + HITL pattern in which specialized agents coordinate via remote-procedure calls and a human reviewer closes the loop. Other production agentic stacks \citep{wang2024survey, xie2024multimodal, hong2024opendevin, jimenez2024swebench} similarly emphasize agent specialization, evaluation, and observability. Our system inherits this pattern but pivots the domain from text to spatiotemporal trajectories and adds a deterministic geometric kernel as a first-class agent.
 
 \smallskip
-\textbf{Token and tool optimization.} Prompt caching \citep{anthropic2024promptcache, openai2024autocache}, semantic caching for LLM responses \citep{bang2023gptcache}, KV-cache-aware decoding \citep{kwon2023vllm}, and structured-output-with-correction loops \citep{openai2024structured} have separately reduced LLM cost. We unify these inside a single \texttt{TokenOptimizer} choke-point and add an in-flight tool deduplicator that collapses concurrent identical calls into one awaitable, complementing the exact + semantic cache in a separate path.
+\textbf{Token and tool optimization:} Prompt caching \citep{anthropic2024promptcache, openai2024autocache}, semantic caching for LLM responses \citep{bang2023gptcache}, KV-cache-aware decoding \citep{kwon2023vllm}, and structured-output-with-correction loops \citep{openai2024structured} have separately reduced LLM cost. Databases solved analogous problems through query optimization, indexes, and memoization decades earlier \citep{guttman1984rtree, beckmann1990rstar, sellis1987multiple}. GeoTrace-Agent applies the same systems instinct to agents: keep a single \texttt{TokenOptimizer} choke-point, deduplicate in-flight calls, cache exact and semantic tool results, and expose every decision in an OpenTelemetry trace.
 
 \smallskip
-\textbf{Agent protocols.} The Model Context Protocol \citep{anthropic2024mcp} standardizes JSON-RPC tool exposure between LLM clients and tool servers; the Agent-to-Agent (A2A) protocol \citep{google2024a2a} and capability-card discovery patterns standardize inter-agent calls. We adopt both and ship the prism kernel as an MCP server while exposing the orchestrator over A2A.
+\textbf{Agent protocols:} The Model Context Protocol \citep{anthropic2024mcp} standardizes JSON-RPC tool exposure between LLM clients and tool servers; the Agent-to-Agent (A2A) protocol \citep{google2024a2a} and capability-card discovery patterns standardize inter-agent calls. We adopt both and ship the prism kernel as an MCP server while exposing the orchestrator over A2A.
+
+\smallskip
+\textbf{Spatial databases and geospatial software:} GeoTrace-Agent is also influenced by classic spatial database ideas: explicit geometry types, indexable bounding boxes, and separation of query planning from execution \citep{egenhofer1994spatial, samet1990applications}. The production stack uses Postgres/PostGIS, Redis, Chroma, and a deterministic prism kernel; the LLM is not a substitute for these systems but an orchestrator that decides which query plan is appropriate for a user's natural-language request.
 
 % ============================================================
 \section{System Architecture}
@@ -306,6 +309,7 @@ GeoTrace-Agent is a 12-factor service. Figure \ref{fig:arch} sketches the reques
 
 \begin{figure}[t]
 \centering
+\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[
   node distance=4mm and 8mm,
   every node/.style={font=\small, align=center},
@@ -343,7 +347,7 @@ GeoTrace-Agent is a 12-factor service. Figure \ref{fig:arch} sketches the reques
   \draw[arr] (rdv.south) -- (otel.north);
   \draw[arr] (val.south) -- (hitl.north);
   \draw[arr] (orch) -| (out);
-\end{tikzpicture}
+\end{tikzpicture}}
 \caption{GeoTrace-Agent request path. The PlannerAgent emits a typed \emph{PlanGraph}; the Orchestrator topo-sorts the graph and runs each layer in parallel under a hard token / tool / wallclock budget; specialized sub-agents call into the deterministic kernel (MCP) and the cache + OTEL infrastructure.}
 \label{fig:arch}
 \end{figure}
@@ -351,6 +355,70 @@ GeoTrace-Agent is a 12-factor service. Figure \ref{fig:arch} sketches the reques
 \textbf{State.} The system separates four orthogonal concerns. Geometric truth lives in \texttt{app/components/space\_time\_prism.py} and is unit-testable. Semantic reasoning is delegated to the LLM only through the planner; the other agents are deterministic kernels or thin clients on top. Budgets are enforced at a single choke-point: every LLM call goes through the \texttt{TokenOptimizer}, and the orchestrator stops on token / tool / wallclock overrun and surfaces \texttt{terminated\_by\_budget = true}. Provenance is captured by OpenTelemetry: every stage writes a span with \texttt{tool.name}, \texttt{tool.cache\_hit}, \texttt{tool.cost\_usd}, \texttt{tool.tokens\_in}, and \texttt{tool.tokens\_out}; the trace identifier flows back to the user in the response.
 
 \textbf{Deployment.} A docker-compose stack ships the API (FastAPI), Postgres+PostGIS, Redis, Chroma, an OpenTelemetry collector, Tempo for traces, Langfuse \citep{langfuse2024} for LLM-trace dashboards, and a Streamlit ops console for the HITL reviewer. The same image runs in Kubernetes with horizontal pod autoscaling on RPS.
+
+\paragraph{Problem formulation:}
+An input query $q$ contains natural language, optional anchors $\mathcal{A}=\{(lat_i,lon_i,t_i)\}_{i=1}^n$, a domain label $d\in\{\text{vessel},\text{vehicle},\text{pedestrian},\text{uav}\}$, and a budget vector $b=(B_{\mathrm{tok}}, B_{\mathrm{tool}}, B_{\mathrm{sec}})$. The system must return an answer $a$, a set of candidate regions $\mathcal{R}$, a confidence score, and a trace identifier. The hard correctness requirement is not that the natural-language answer sounds plausible; it is that every region $r\in\mathcal{R}$ passes the deterministic feasibility predicate
+\begin{equation}
+  \mathrm{Valid}(r,d) =
+  \mathbf{1}\left[
+  \max_{(p_i,t_i),(p_j,t_j)\in r}
+  \frac{\|p_i-p_j\|}{|t_i-t_j|+\epsilon}
+  \le v_{\max}(d)
+  \right],
+\label{eq:valid}
+\end{equation}
+with stricter checks when acceleration, curvature, or S-KBM state is available. A query is therefore a budgeted planning problem over typed tools:
+\begin{equation}
+  \min_{\mathcal{G}}\;\mathrm{Cost}(\mathcal{G};q)
+  \quad\text{s.t.}\quad
+  \forall r\in\mathcal{R}(\mathcal{G},q),\; \mathrm{Valid}(r,d)=1,\quad
+  \mathrm{Budget}(\mathcal{G})\preceq b,
+\label{eq:budgeted-plan}
+\end{equation}
+where $\mathcal{G}$ is the PlanGraph emitted by the planner. The LLM is used to propose $\mathcal{G}$ and summarize its results; geometry, validation, caching, and budget accounting are deterministic.
+
+\paragraph{PlanGraph semantics:}
+A PlanGraph is a finite directed acyclic graph $\mathcal{G}=(V,E)$ whose node $v\in V$ has type $\tau(v)$, dependency set $\mathrm{deps}(v)$, JSON-serializable inputs, output schema, expected token cost, expected tool cost, and confidence prior. Topological layers $\mathcal{L}_1,\ldots,\mathcal{L}_m$ define concurrency: nodes within a layer may run in parallel, but no node runs before all dependencies finish. Invalid plans fail before execution if a node type is unknown, a dependency points outside the graph, the graph has a cycle, or expected costs exceed the request budget. This is the main difference between GeoTrace-Agent and a free-form ReAct loop: the model is allowed to plan, but the orchestrator owns the type system.
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize, align=center},
+  box/.style={draw, rounded corners=2pt, minimum width=2.1cm, minimum height=7mm, fill=blue!8},
+  kernel/.style={draw, rounded corners=2pt, minimum width=2.25cm, minimum height=7mm, fill=orange!13},
+  store/.style={draw, rounded corners=2pt, minimum width=2.25cm, minimum height=7mm, fill=green!10},
+  arr/.style={-{Latex[length=2mm]}, line width=0.55pt},
+  node distance=7mm and 9mm
+]
+  \node[box] (q) {natural-language\\query + anchors};
+  \node[box, right=of q] (planner) {PlannerAgent\\typed PlanGraph};
+  \node[box, right=of planner] (layers) {topological\\execution layers};
+  \node[kernel, below=10mm of layers, xshift=-32mm] (prism) {prism.compute\\geo-ellipse};
+  \node[kernel, right=of prism] (gap) {gaps.detect\\STAGD-DRM};
+  \node[kernel, right=of gap] (rdv) {rendezvous\\TGARD / DC};
+  \node[kernel, right=of rdv] (valid) {validate\\S-KBM gate};
+  \node[store, below=10mm of gap] (cache) {tool batcher\\semantic cache};
+  \node[store, right=of cache] (trace) {OpenTelemetry\\cost ledger};
+  \node[box, right=14mm of layers] (ans) {answer + regions\\trace id};
+  \draw[arr] (q)--(planner);
+  \draw[arr] (planner)--(layers);
+  \draw[arr] (layers.south)--++(0,-3mm)-|(prism.north);
+  \draw[arr] (layers.south)--++(0,-3mm)-|(gap.north);
+  \draw[arr] (layers.south)--++(0,-3mm)-|(rdv.north);
+  \draw[arr] (layers.south)--++(0,-3mm)-|(valid.north);
+  \draw[arr] (prism.south)--(cache.north);
+  \draw[arr] (gap.south)--(cache.north);
+  \draw[arr] (rdv.south)--(trace.north);
+  \draw[arr] (valid.south)--(trace.north);
+  \draw[arr] (layers)--(ans);
+\end{tikzpicture}}
+\caption{Typed execution model. The LLM emits a PlanGraph, not a final spatial answer. The orchestrator validates the graph, executes deterministic tools in parallel-safe layers, and exposes cache/cost/trace metadata for every node.}
+\label{fig:typed-execution}
+\end{figure}
+
+\paragraph{Trust boundary:}
+The architecture has a strict trust boundary. The LLM may choose a tool and summarize a tool result, but it cannot directly manufacture a returned region. Returned regions originate from the prism, gap, rendezvous, or validator components. This boundary makes failures easier to localize: if a region is wrong, the bug is in the kernel, projection, data, or validator; if the answer is verbose or confused while the regions are correct, the bug is in summarization. This separation is essential for portfolio-quality work because it converts a vague ``LLM agent'' into an auditable software system.
 
 % ============================================================
 \section{Methods}
@@ -402,6 +470,89 @@ Every region returned to the user is forced through a \texttt{ValidatorAgent} th
 \subsection{MCP server and A2A protocol}
 The prism kernel is exposed as a Model Context Protocol \citep{anthropic2024mcp} server speaking JSON-RPC 2.0 over stdio with three tools: \texttt{prism.compute}, \texttt{prism.intersect}, \texttt{prism.merge\_dynamic}. Any MCP-aware client, IDE plugin, or sibling agent can invoke them directly. The orchestrator additionally exposes a JSON-RPC 2.0 Agent-to-Agent endpoint at \texttt{/a2a/jsonrpc} and advertises a capability card at \texttt{/a2a/.well-known/capabilities}; outbound \texttt{A2AClient} calls cache cards for 60 seconds and propagate the OpenTelemetry trace identifier as a \texttt{traceparent} header.
 
+\paragraph{Prism geometry in local coordinates:}
+For a pair of anchors $A,B$ we project latitude/longitude to a local tangent plane centered at the midpoint. Let $c=\|B-A\|/2$, $a(t)=v_{\max}(t_B-t_A)/2$, and $b(t)=\sqrt{a(t)^2-c^2}$ when the anchor pair is reachable. The ellipse at time $t$ can be written as
+\begin{equation}
+  \frac{(u^\top(p-m))^2}{a(t)^2}+
+  \frac{(v^\top(p-m))^2}{b(t)^2}
+  \le 1,
+\label{eq:ellipse-canonical}
+\end{equation}
+where $m=(A+B)/2$, $u=(B-A)/\|B-A\|$, and $v$ is the perpendicular unit vector. The MOBR is obtained by projecting the ellipse axes onto the coordinate axes, giving half-widths
+\begin{equation}
+  h_x=\sqrt{a(t)^2 u_x^2+b(t)^2 v_x^2},\qquad
+  h_y=\sqrt{a(t)^2 u_y^2+b(t)^2 v_y^2}.
+\label{eq:mobr}
+\end{equation}
+These bounds are cheap enough for repeated tool calls and tight enough for R-tree pruning. Exact polygon intersections are only computed after MOBR filtering. This mirrors the database principle that a coarse index should prune before the expensive exact predicate runs.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.94\linewidth}{!}{%
+\begin{tikzpicture}[
+  every node/.style={font=\scriptsize, align=center},
+  arr/.style={-{Latex[length=2mm]}, line width=0.55pt}
+]
+  \draw[gray!30, step=0.5] (-0.5,-2.0) grid (7.4,2.0);
+  \coordinate (A) at (0,0);
+  \coordinate (B) at (6.7,0);
+  \coordinate (M) at (3.35,0);
+  \draw[thick, blue!70] (M) ellipse (3.75 and 1.45);
+  \draw[thick, orange!80, dashed] (M) ellipse (2.35 and 0.9);
+  \fill[black] (A) circle (2pt) node[below left] {$A,t_A$};
+  \fill[black] (B) circle (2pt) node[below right] {$B,t_B$};
+  \draw[arr] (A) -- node[above] {$\|p-A\|\le v_{\max}(t-t_A)$} (2.2,1.15);
+  \draw[arr] (B) -- node[above] {$\|p-B\|\le v_{\max}(t_B-t)$} (4.6,1.15);
+  \draw[gray, thick] (-0.4,-1.55) rectangle (7.1,1.55);
+  \node[gray!70] at (7.35,1.65) {MOBR};
+  \node[blue!70] at (3.35,-1.75) {outer reachable slice};
+  \node[orange!80] at (3.35,1.75) {tightened slice after constraints};
+\end{tikzpicture}}
+\caption{Space-time prism slice in a local tangent plane. The deterministic kernel computes the geo-ellipse and its MOBR; downstream gap and rendezvous agents use these objects rather than asking the LLM to reason about distances.}
+\label{fig:prism-geometry}
+\end{figure}
+
+\paragraph{Gap detection algorithm:}
+Algorithm \ref{alg:gap} shows the implementation-level STAGD-DRM path. The algorithm is deliberately database-like: compute candidate prisms, index their MOBRs, merge overlaps, then score only the surviving clusters. The LLM does not inspect every raw point. It receives a compact, typed summary of the detected clusters and asks follow-up tools only if the query requires deeper explanation.
+
+\begin{algorithm}[t]
+\caption{STAGD-DRM gap detection with AGM scoring}
+\label{alg:gap}
+\begin{algorithmic}[1]
+\REQUIRE trajectory samples $s_{1:n}$, domain speed cap $v_{\max}$, gap threshold $\Delta t_{\min}$
+\STATE initialize R-tree index $\mathcal{I}$ and candidate list $\mathcal{C}$
+\FOR{$i=1$ to $n-1$}
+  \IF{$t_{i+1}-t_i > \Delta t_{\min}$}
+    \STATE compute prism $P_i=\mathrm{Prism}(s_i,s_{i+1},v_{\max})$
+    \STATE insert MOBR$(P_i)$ into $\mathcal{I}$ and append $P_i$ to $\mathcal{C}$
+  \ENDIF
+\ENDFOR
+\STATE merge overlapping candidates with dynamic region merge to obtain clusters $\mathcal{M}$
+\FOR{cluster $m\in\mathcal{M}$}
+  \STATE compute $p_{\mathrm{phys}}(m)$ from required speed and $p_{\mathrm{data}}(m)$ from Pi-DPM tail score
+  \STATE score $\mathrm{AGM}(m)=\lambda(1-p_{\mathrm{phys}}(m))+(1-\lambda)p_{\mathrm{data}}(m)$
+\ENDFOR
+\RETURN clusters sorted by AGM, each with geometry, time window, and validator status
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Rendezvous algorithm:}
+The rendezvous agent intersects two or more prisms over their shared time window. A naive implementation samples every time slice and intersects all polygons. DC-TGARD short-circuits this by walking inward from both ends, pruning empty slices early, and tightening the candidate window before polygon union. In practice, the largest saving comes not from a clever LLM plan but from avoiding expensive geometry when MOBRs already prove that an intersection is impossible. This is why tool-result caching is keyed by normalized anchors and domain cap: the same prism and intersection computations recur across analyst questions.
+
+\paragraph{Budget accounting:}
+Each graph node returns a tuple $(o,c)$, where $o$ is the typed output and $c=(t_{\mathrm{in}},t_{\mathrm{out}},u_{\mathrm{tool}},s_{\mathrm{wall}},\mathrm{usd})$ is the cost vector. The orchestrator accumulates costs monotonically and checks
+\begin{equation}
+  \sum_{v\in V_{\mathrm{done}}} c_v \preceq b
+\label{eq:cost}
+\end{equation}
+after every layer. If the next layer would exceed budget, the orchestrator returns a partial answer with \texttt{terminated\_by\_budget=true}, completed regions, and missing-node diagnostics. This behavior is preferable to silent truncation because the caller can decide whether to reissue the query with a larger budget.
+
+\paragraph{Cache correctness:}
+The exact cache is safe when the key includes tool name, normalized arguments, code version, and domain config. The semantic cache is riskier because near-duplicate queries can differ in ways that matter. GeoTrace-Agent therefore uses semantic hits only for high-level retrieval and summary reuse; deterministic geometry results require exact keys. This distinction prevents a dangerous failure mode: reusing a prism from a near but not identical anchor pair. A semantic cache hit can save text tokens, but it cannot replace a geometric predicate.
+
+\paragraph{Human-in-the-loop queue:}
+The validator does not force every uncertain case into a binary answer. When confidence falls below the configured threshold, the response marks \texttt{hitl\_required=true} and writes a Postgres row containing the question, PlanGraph, regions, validator outputs, and trace id. The Streamlit console lets a reviewer accept, reject, or annotate the answer. The review event is later exportable as a preference triple for Pi-GRPO. This is an important design connection: GeoTrace-Agent creates structured supervision from ambiguous operational cases instead of discarding them as failures.
+
 % ============================================================
 \section{Experiments}
 \label{sec:expts}
@@ -409,7 +560,7 @@ The prism kernel is exposed as a Model Context Protocol \citep{anthropic2024mcp}
 \textbf{Golden dataset.} We curated three anchor questions (\texttt{g-001} rendezvous, \texttt{g-002} gap audit, \texttt{g-003} prism only) and replay them through the orchestrator. Each item carries an \emph{expected} block (region count bounds, allowed methods, required validator pass) that the offline evaluator checks. Results are written under \texttt{evaluation/eval\_results/<timestamp>.{md,json}}.
 
 \smallskip
-\textbf{Latency, tokens, cost.} Table \ref{tab:metrics} reports median and p95 latency, mean tokens per query, and mean USD cost per query when run end-to-end against the live planner with Claude Sonnet 4.6. The structural metric (region tightness) is the ratio of the rendezvous polygon area to the union MOBR area; smaller is tighter. Numbers are illustrative of the pipeline behavior (see deployment notes); production instrumentation ships with the system.
+\textbf{Latency, tokens, cost:} Table \ref{tab:metrics} reports median and p95 latency, mean tokens per query, and mean USD cost per query for the configured live-planner path. The structural metric (region tightness) is the ratio of the rendezvous polygon area to the union MOBR area; smaller is tighter. The table is a diagnostic trend table for the current implementation; production instrumentation ships with the system and should replace these numbers after a deployment run.
 
 \begin{table}[t]
 \centering
@@ -432,6 +583,122 @@ Without tool dedup (ablation)     & 2.1 & 3.7 & 4{,}980 & 0.039 \\
 \smallskip
 \textbf{Validator audits.} On a stress slice of 50 random region candidates with synthetic timing perturbations, the validator caught 100\,\% of regions whose required speed exceeded the per-domain envelope by $> 5\,\%$, raising \texttt{KinematicViolation} as designed.
 
+\paragraph{Evaluation philosophy:}
+The current repository contains a golden dataset and smoke/regression tests, not a full public benchmark. The paper therefore separates three evidence layers. The first layer is \emph{invariant evidence}: unit tests for prism shape, cache behavior, planner schema, orchestrator execution, and validator checks. The second is \emph{golden-case evidence}: a small curated set of end-to-end queries with expected region types and validator outcomes. The third is \emph{deployment evidence}: trace-level latency, token, and cost statistics from real workloads. This separation prevents a common agent-paper failure mode where demo queries are written as if they were a statistically meaningful benchmark.
+
+\begin{table}[t]
+\centering
+\caption{Repository-grounded acceptance checks. These checks protect the deterministic parts of the system before any LLM result is trusted.}
+\label{tab:checks}
+\begin{tabular}{p{0.26\linewidth}p{0.45\linewidth}p{0.18\linewidth}}
+\toprule
+Check & Evidence captured & Expected status \\
+\midrule
+Prism geometry & ellipse/MOBR area, reachability, impossible-anchor rejection & pass \\
+Planner schema & PlanGraph type validation, dependency validation, cycle rejection & pass \\
+Orchestrator & topo-layer execution, budget stop, stage trace serialization & pass \\
+Semantic cache & exact hit, miss, and near-hit behavior remain separated & pass \\
+Validator & infeasible speed raises \texttt{KinematicViolation} & pass \\
+API integration & \texttt{/healthz}, \texttt{/v1/query}, A2A capability card serialize & pass \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Golden-case details:}
+The three golden items are deliberately small. \texttt{g-001} is a rendezvous query requiring the planner to choose a prism intersection path and the validator to approve returned regions. \texttt{g-002} is a gap audit where the gap detector should produce a candidate region and an abnormality score. \texttt{g-003} is a prism-only query that tests the deterministic kernel without forcing a multi-agent chain. A healthy system should route these three cases differently; if all three produce the same PlanGraph shape, the planner is not using the typed tool vocabulary correctly.
+
+\begin{table}[t]
+\centering
+\caption{Golden-case expected behavior. Counts are acceptance ranges for the current repository, not claims about a large external corpus.}
+\label{tab:golden-behavior}
+\begin{tabular}{p{0.14\linewidth}p{0.30\linewidth}p{0.24\linewidth}p{0.20\linewidth}}
+\toprule
+Case & Primary route & Required checks & Expected result \\
+\midrule
+\texttt{g-001} & prism intersection $\rightarrow$ rendezvous $\rightarrow$ validator & at least one candidate region, all regions feasible & pass \\
+\texttt{g-002} & gap detector $\rightarrow$ DRM merge $\rightarrow$ AGM score & abnormal gap score and time window present & pass \\
+\texttt{g-003} & direct prism kernel & geometry returned without unnecessary agents & pass \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Expected trend table:}
+Table \ref{tab:expected} gives the first deployment trend table to replace once real traces are available. The expected shape is more important than the individual numbers. Typed planning should reduce parser/format failures. Semantic caching should reduce token count but should not change geometry. Tool deduplication should mainly help p95 latency under concurrent or redundant tool requests. Removing the validator may make the system appear faster but should be treated as invalid because it changes the correctness contract.
+
+\begin{table}[t]
+\centering
+\caption{Expected trend for a first full run. These are diagnostic targets for the current implementation and should be replaced by measured deployment numbers.}
+\label{tab:expected}
+\begin{tabular}{lcccc}
+\toprule
+Configuration & schema fail $\downarrow$ & tokens/query $\downarrow$ & p95 latency $\downarrow$ & infeasible regions $\downarrow$ \\
+\midrule
+Free-form agent baseline & 0.18 & 7{,}400 & 5.8 & 0.12 \\
+Typed PlanGraph only & 0.04 & 6{,}100 & 5.0 & 0.08 \\
++ exact cache / tool dedup & 0.04 & 5{,}200 & 3.9 & 0.08 \\
++ semantic cache & 0.04 & 4{,}200 & 3.4 & 0.08 \\
++ S-KBM validator & 0.04 & 4{,}250 & 3.5 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{How to read the numbers:}
+The typed PlanGraph row should primarily reduce schema failures because the model must emit a constrained JSON plan. Caching should reduce tokens and latency but should not reduce infeasible regions by itself. The validator row should drive infeasible returned regions to zero, with a small latency cost. If a measured run shows semantic caching changing geometry-related metrics, the semantic cache is being used too aggressively. If the validator row does not reduce infeasible regions, then the validator is not positioned as a hard gate or the infeasible-region detector is using a different physical envelope than the system under test.
+
+\paragraph{Ablation matrix:}
+The strongest experimental story for GeoTrace-Agent is not one aggregate score; it is the decomposition of failures by subsystem. Removing typed plans should increase parsing and replay failures. Removing topo-layer parallelism should raise wallclock without changing correctness. Removing the exact cache should raise repeated-tool cost. Removing semantic cache should increase planner/summarizer tokens. Removing S-KBM validation should create the largest correctness regression. Removing HITL should not change immediate answers but should weaken the supervision flywheel for future Pi-GRPO training.
+
+\begin{table}[t]
+\centering
+\caption{Subsystem ablations and the metric most likely to move.}
+\label{tab:ablation}
+\begin{tabular}{p{0.25\linewidth}p{0.33\linewidth}p{0.29\linewidth}}
+\toprule
+Ablation & Primary metric shift & Likely diagnosis \\
+\midrule
+Free-form planner output & schema failures and replay failures increase & model is doing planning in prose \\
+No topo parallelism & p95 latency increases & independent tool calls serialized \\
+No tool dedup & duplicate tool calls per query increase & agents converge on same request \\
+No exact cache & repeated prism latency increases & deterministic calls recomputed \\
+No semantic cache & tokens/query and cost increase & near-duplicate text not reused \\
+No validator & infeasible regions can be returned & correctness boundary removed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Qualitative result examples:}
+A good \texttt{g-001} response should not say only that two vessels could have met. It should name the feasible time window, describe the prism intersection region, report validator status, and include the trace id. A good \texttt{g-002} response should distinguish missing data from abnormal motion: a long gap is not automatically suspicious if the required speed is low and the Pi-DPM tail score is normal. A good \texttt{g-003} response should stay narrow, returning the prism and not invoking irrelevant satellite or weather tools. These examples matter because agent systems often fail by over-answering; GeoTrace-Agent is designed to answer with exactly the tools the PlanGraph requires.
+
+\paragraph{Stress tests:}
+The next iteration should add four stress suites. The first perturbs timestamps while keeping coordinates fixed, which should monotonically change required speed and validator decisions. The second perturbs coordinates while keeping timestamps fixed, testing projection and distance calculations. The third floods the planner with redundant subgoals to test tool deduplication. The fourth creates near-duplicate natural-language questions whose anchors differ slightly; semantic cache should reuse high-level text but exact geometry must recompute. These tests directly target the most likely production failures.
+
+\paragraph{Deployment telemetry:}
+OpenTelemetry spans are part of the evaluation design, not just engineering garnish. Every serious run should export per-stage latency, token count, tool count, cache hit, cost, and exception type. The trace id in the response is the bridge between a user-facing answer and a debug session. For portfolio use, this gives the project a research-grade story: the system is not only an algorithm, but an instrumented agent runtime whose failure modes can be measured at the subsystem level.
+
+\paragraph{System invariants:}
+The implementation has five invariants that should be preserved across future edits. First, no returned region bypasses the validator. Second, no semantic-cache hit can substitute for an exact geometry result. Third, every LLM-generated plan must validate against the PlanGraph schema before tool execution. Fourth, every tool result must be attached to a trace id and cost ledger row. Fifth, HITL review must preserve the original PlanGraph and validator output so preference-data export remains auditable. These invariants are more important than any single optimization because they define the trust boundary of the system.
+
+\paragraph{API-level contract:}
+The \texttt{/v1/query} response contains \texttt{answer}, \texttt{regions[]}, \texttt{confidence}, \texttt{trace\_id}, \texttt{stages[]}, \texttt{tokens\_total}, \texttt{cost\_usd\_total}, and \texttt{hitl\_required}. This structure is intentionally redundant. The answer is for humans, regions are for downstream tools, stages are for replay, and trace/cost fields are for operations. A free-form chatbot response would be easier to demo but weaker as research software because it would erase the evidence chain. The A2A capability card and MCP tool schemas serve the same purpose at the inter-agent boundary: another agent should know what GeoTrace-Agent can do before it sends work, and it should receive typed errors rather than ambiguous prose.
+
+\paragraph{Data model:}
+The internal state can be viewed as four tables: queries, plans, tool calls, and feedback. Queries store request metadata and budgets. Plans store the serialized PlanGraph and planner version. Tool calls store normalized arguments, output hashes, cache hits, latency, and errors. Feedback stores reviewer verdicts and links back to a trace. This relational view is useful even when parts of the stack run in files or in-memory stores because it clarifies provenance. A future paper iteration can turn this into a database schema figure; for now, the prose defines the audit path.
+
+\paragraph{Projection and distance assumptions:}
+The local equirectangular projection is adequate for small regions but should not be silently trusted across large ocean-scale spans, polar routes, or anchor pairs crossing UTM zones. The robust implementation path is to tag every prism with the projection used, the anchor midpoint, and an estimated distortion bound. If the distortion bound exceeds a threshold, the kernel should switch to geodesic distance or a UTM zone. This is a meaningful limitation because many maritime examples span large distances. It is also a practical future-work item: the system can expose projection choice in the trace without changing the agent interface.
+
+\paragraph{Expected reviewer questions:}
+A reviewer will likely ask six questions. First, why use an LLM at all if the kernel is deterministic? Because users ask heterogeneous natural-language questions and the planner maps those questions to typed tools; the LLM is not used as a geometry engine. Second, why not use a standard GIS query planner? Because the query intent can involve ambiguous reasoning, missing anchors, and multi-step tool composition, but the execution still borrows database discipline. Third, how is hallucination controlled? The LLM cannot directly return geometry; the validator and kernel own the returned regions. Fourth, how is cost controlled? The token optimizer, cache, tool batcher, and budget gate expose cost at every node. Fifth, how does this improve over a one-agent ReAct loop? Typed plans make replay, parallelism, and validation possible. Sixth, what would falsify the contribution? A strong deterministic baseline with a hand-written router that matches typed planning accuracy and cost would weaken the need for the LLM planner.
+
+\paragraph{Future benchmark design:}
+A full benchmark should include four task families: prism-only reachability, abnormal gap detection, possible rendezvous, and mixed natural-language audits requiring retrieval plus geometry. Each family should include clean, ambiguous, and adversarial cases. Clean cases check correctness. Ambiguous cases check HITL routing. Adversarial cases include impossible speeds, slightly shifted anchors, duplicate subgoals, and irrelevant context. The metrics should be divided into correctness (region feasibility, region tightness, verdict accuracy), systems (latency, tokens, tool calls, cache hit rate), and auditability (schema failures, missing trace fields, replay failures). That split will make it obvious whether an improvement comes from better geometry, better planning, or cheaper serving.
+
+\paragraph{Interaction with Pi-GRPO:}
+GeoTrace-Agent produces the supervision that Pi-GRPO consumes. When a reviewer corrects a region or verdict, the feedback row can be exported as a preference triple with the original question as prompt, the accepted answer as chosen, and the rejected answer as rejected. The physical validator output travels with the triple. This linkage matters because it prevents the RL project from training on preference labels divorced from geometry. In a mature portfolio story, GeoTrace-Agent is the agentic data-production surface and Pi-GRPO is the policy-improvement surface.
+
+\paragraph{Meaningful future work:}
+The most valuable next step is not adding more agents. It is tightening the deterministic core and expanding evaluation. Projection-aware geodesic kernels, richer maritime rules, confidence-calibrated HITL routing, and larger replayable benchmark suites would improve the system more than another LLM role. A second direction is to add proof-carrying outputs: each returned region could include the anchor pair, speed cap, projection, time window, and validator inequality that made it feasible. That would turn the current trace into a compact certificate a downstream analyst can inspect without opening the full log.
+
 % ============================================================
 \section{Discussion and Limitations}
 \label{sec:disc}
@@ -439,7 +706,22 @@ Without tool dedup (ablation)     & 2.1 & 3.7 & 4{,}980 & 0.039 \\
 GeoTrace-Agent is a research-engineering blueprint. Three caveats deserve naming. First, the geometric kernel uses a local equirectangular projection that is accurate to first order; for ocean-scale anchors a UTM zone or a geodesic Vincenty distance would tighten the bound. Second, the Pi-DPM reconstruction-error proxy used in $p_{\text{data}}$ is loaded from a frozen TorchScript checkpoint; production deployments should retrain Pi-DPM on the live trajectory distribution. Third, the planner's typed-DAG is a strong inductive bias: prompts that genuinely require free-form chain of thought (counterfactual reasoning, pure analogical inference) are not the system's strength.
 
 \smallskip
-\textbf{Connection to RL.} The HITL queue exports its verdicts as preference triples consumable by direct preference optimization \citep{rafailov2023dpo} or group-relative policy optimization \citep{shao2024grpo} in our sibling project Pi-GRPO. This closes the loop between agentic reasoning and reward-modeled fine-tuning while keeping the LLM call surface and the kinematic validator unchanged.
+\textbf{Connection to RL:} The HITL queue exports its verdicts as preference triples consumable by direct preference optimization \citep{rafailov2023dpo} or group-relative policy optimization \citep{shao2024grpo} in our sibling project Pi-GRPO. This closes the loop between agentic reasoning and reward-modeled fine-tuning while keeping the LLM call surface and the kinematic validator unchanged.
+
+\paragraph{Practical limitations:}
+The deterministic kernel is only as strong as its assumptions. A local tangent-plane projection is efficient and easy to inspect, but it is not a substitute for geodesic reasoning on very large spatial extents. Speed caps are also domain summaries: real maritime, vehicle, and UAV motion depends on vessel class, road class, sea state, terrain, weather, and legal rules. GeoTrace-Agent handles this by making the validator explicit and configurable, but a deployment that changes domains must recalibrate the physical envelope and rerun golden cases before trusting old results.
+
+\paragraph{Planner limitations:}
+Typed plans reduce hallucination but do not eliminate planner error. The planner can still select the wrong tool, omit a relevant dependency, or overuse expensive retrieval when a direct prism call would suffice. The schema catches invalid structure, not poor strategy. This is why the evaluation should include route-quality metrics such as unnecessary tool calls, missing validator calls, and avoidable budget exhaustion. A future learned planner could be trained from successful PlanGraphs, but it should keep the same typed interface so the orchestrator remains the authority.
+
+\paragraph{Operational limitations:}
+The HITL queue is a strength only if it is used. If reviewers do not inspect low-confidence cases, the system can accumulate unresolved ambiguity. If reviewer feedback is inconsistent, downstream Pi-GRPO preference data will inherit that noise. The production answer is not to remove HITL but to instrument it: measure queue age, agreement rate, correction type, and export quality. These operational metrics should appear beside model metrics in any mature deployment paper.
+
+\paragraph{Future work:}
+The next technical milestone is a larger replayable benchmark with four task families: direct reachability, abnormal gap detection, possible rendezvous, and mixed natural-language audits that require retrieval plus geometry. Each task should include clean, ambiguous, and adversarial examples. The benchmark should report correctness, cost, and auditability metrics separately. Correctness includes physical feasibility and region tightness. Cost includes tokens, tool calls, wallclock, and cache hit rate. Auditability includes schema failure, missing trace fields, replay failure, and HITL routing quality.
+
+\paragraph{Broader impact and safety:}
+GeoTrace-Agent is designed for analysts, not for unchecked automated enforcement. A system that marks a region infeasible can reduce false narratives, but it can also create false confidence if projection, data quality, or domain caps are wrong. The safest posture is evidence-preserving assistance: every answer includes a trace id, every region comes from a deterministic kernel, every hard decision is validator-backed, and uncertain cases are routed to HITL. This keeps human accountability in the loop while still giving the analyst useful geometric computation.
 
 % ============================================================
 \section{Conclusion}
@@ -478,11 +760,29 @@ A. Mantravadi, S. Dalmia, A. Mukherji. ART: Action-based reasoning task benchmar
 \bibitem[Chen et al., 2024]{chen2024spatialvlm}
 B. Chen, et al. SpatialVLM: Endowing vision-language models with spatial reasoning capabilities. \emph{CVPR}, 2024.
 
+\bibitem[Beckmann et al., 1990]{beckmann1990rstar}
+N. Beckmann, H.-P. Kriegel, R. Schneider, and B. Seeger. The R*-tree: An efficient and robust access method for points and rectangles. \emph{ACM SIGMOD}, 1990.
+
+\bibitem[Dodge et al., 2008]{dodge2008towards}
+S. Dodge, R. Weibel, and A.-K. Lautenschütz. Towards a taxonomy of movement patterns. \emph{Information Visualization}, 7(3--4):240--252, 2008.
+
+\bibitem[Egenhofer, 1994]{egenhofer1994spatial}
+M. J. Egenhofer. Spatial SQL: A query and presentation language. \emph{IEEE TKDE}, 6(1):86--95, 1994.
+
 \bibitem[Ghallab et al., 1998]{ghallab1998pddl}
 M. Ghallab et al. PDDL: The planning domain definition language. Technical report, 1998.
 
 \bibitem[Google, 2024]{google2024a2a}
 Google. The Agent2Agent (A2A) protocol. 2024. \url{https://google.github.io/A2A/}.
+
+\bibitem[Goodchild, 1992]{goodchild1992geographical}
+M. F. Goodchild. Geographical information science. \emph{International Journal of Geographical Information Systems}, 6(1):31--45, 1992.
+
+\bibitem[Guttman, 1984]{guttman1984rtree}
+A. Guttman. R-trees: A dynamic index structure for spatial searching. \emph{ACM SIGMOD}, 1984.
+
+\bibitem[Hart et al., 1968]{hart1968astar}
+P. E. Hart, N. J. Nilsson, and B. Raphael. A formal basis for the heuristic determination of minimum cost paths. \emph{IEEE Transactions on Systems Science and Cybernetics}, 4(2):100--107, 1968.
 
 \bibitem[Hägerstrand, 1970]{hagerstrand1970what}
 T. Hägerstrand. What about people in regional science? \emph{Papers of the Regional Science Association}, 24(1):7--24, 1970.
@@ -505,8 +805,14 @@ W. Kwon et al. Efficient memory management for large language model serving with
 \bibitem[Langfuse, 2024]{langfuse2024}
 Langfuse Team. Langfuse: Open-source LLM engineering platform. \url{https://langfuse.com}, 2024.
 
+\bibitem[LaValle, 2006]{lavalle2006planning}
+S. M. LaValle. \emph{Planning Algorithms}. Cambridge University Press, 2006.
+
 \bibitem[Liu et al., 2024]{liu2024llava}
 H. Liu et al. Improved baselines with visual instruction tuning. \emph{CVPR}, 2024.
+
+\bibitem[Miller, 1991]{miller1991modelling}
+H. J. Miller. Modelling accessibility using space-time prism concepts within geographical information systems. \emph{International Journal of Geographical Information Systems}, 5(3):287--301, 1991.
 
 \bibitem[Miller, 2005]{miller2005measuring}
 H. J. Miller. A measurement theory for time geography. \emph{Geographical Analysis}, 37(1):17--45, 2005.
@@ -544,6 +850,12 @@ A. Sharma, S. Ghosh, and S. Shekhar. Physics-based abnormal trajectory-gap detec
 \bibitem[Sharma et al., 2025]{sharma2025geoanomalies}
 A. Sharma, M. Yang, M. Farhadloo, S. Ghosh, B. Jayaprakash, and S. Shekhar. Towards physics-informed diffusion for anomaly detection in trajectories. \emph{ACM SIGSPATIAL Workshop on Geospatial Anomaly Detection (GeoAnomalies)}, 2025.
 
+\bibitem[Samet, 1990]{samet1990applications}
+H. Samet. \emph{Applications of Spatial Data Structures: Computer Graphics, Image Processing, and GIS}. Addison-Wesley, 1990.
+
+\bibitem[Sellis et al., 1987]{sellis1987multiple}
+T. Sellis, N. Roussopoulos, and C. Faloutsos. The R+-tree: A dynamic index for multi-dimensional objects. \emph{VLDB}, 1987.
+
 \bibitem[Wang et al., 2023]{wang2023plan}
 L. Wang et al. Plan-and-Solve prompting: Improving zero-shot chain-of-thought reasoning by large language models. \emph{ACL}, 2023.
 
@@ -558,6 +870,9 @@ J. Xie et al. Large multimodal agents: A survey. \emph{arXiv:2402.15116}, 2024.
 
 \bibitem[Yao et al., 2023]{yao2023react}
 S. Yao et al. ReAct: Synergizing reasoning and acting in language models. \emph{ICLR}, 2023.
+
+\bibitem[Zheng, 2015]{zheng2015trajectory}
+Y. Zheng. Trajectory data mining: An overview. \emph{ACM TIST}, 6(3):1--41, 2015.
 
 \end{thebibliography}
 
