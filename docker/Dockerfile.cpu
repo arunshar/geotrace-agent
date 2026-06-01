@@ -1,0 +1,27 @@
+# CPU reproducibility image for GeoTrace-Agent.
+#
+# Runs the deterministic spatiotemporal core offline: the Hagerstrand
+# space-time prism geometry and the kinematic-feasibility checks. The
+# service/agent tests (API integration, semantic cache, orchestrator, planner)
+# require live Postgres/Redis/Chroma and LLM APIs and are out of scope for a
+# hermetic determinism gate. This image proves the math core reproduces
+# identically inside a clean container as on bare metal.
+#
+# Build: docker build -f docker/Dockerfile.cpu -t repro:cpu .
+# Run:   docker run --rm repro:cpu
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=0 \
+    PYTHONPATH=/srv
+
+WORKDIR /srv
+
+RUN pip install --no-cache-dir \
+      numpy scipy shapely pydantic pydantic-settings structlog orjson tenacity \
+      pytest pytest-asyncio hypothesis
+
+COPY . /srv
+
+CMD ["sh", "-c", "pytest tests/test_prism.py tests/test_prism_properties.py tests/test_kinematics.py -q -o asyncio_mode=auto"]
