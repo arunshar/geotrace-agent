@@ -32,11 +32,18 @@ class ValidatorAgent:
         out: list[RendezvousRegion] = []
         for r in regions:
             geom = shape(r.polygon_geojson)
-            cx, cy = geom.centroid.x, geom.centroid.y
             window_s = (r.latest_meet_t - r.earliest_meet_t).total_seconds()
             if window_s < 0:
                 raise KinematicViolation("region time window is reversed", region=r.model_dump(mode="json"))
-            v_req_proxy = haversine_m(cy, cx, cy, cx) / max(window_s, 1.0)
+            # Worst-case required speed across the region: the farthest two
+            # corners of the region's lon/lat bounding box must be traversable
+            # within the meet window. The previous implementation took the
+            # haversine of the centroid against itself (always 0 m), so the
+            # speed gate never fired; here we use the bounding-box diagonal as
+            # the maximum displacement the moving object would have to cover.
+            minx, miny, maxx, maxy = geom.bounds
+            span_m = haversine_m(miny, minx, maxy, maxx)
+            v_req_proxy = span_m / max(window_s, 1.0)
             if v_req_proxy > bounds.v_max_mps * 1.05:
                 raise KinematicViolation(
                     "region implies infeasible required speed",

@@ -73,7 +73,7 @@ GeoTrace-Agent speaks the modern agent-protocol stack natively. The prism kernel
 ## 1.1 Contributions
 
 1. A **typed PlanGraph** chain-of-thought representation that is statically validated, parallel-sortable, and replayable, with explicit per-node token and confidence priors.
-2. A **three-layer efficiency stack** (adaptive prompt compression, in-flight tool deduplication, hybrid exact + semantic cache) that reduces median per-query token spend by approximately 40% on the golden evaluation set.
+2. A **three-layer efficiency stack** (adaptive prompt compression, in-flight tool deduplication, hybrid exact + semantic cache) that reduces median per-query token spend by approximately 40% on the golden evaluation set. This ~40% figure is illustrative of the pipeline behavior and has not been independently reproduced; the cost/latency table in Section 5 is likewise illustrative.
 3. A **deterministic time-geographic kernel** integrating Hägerstrand prisms with the STAGD-DRM gap detector and the TGARD / DC-TGARD rendezvous finder, gated by a kinematic validator that guarantees physical feasibility of every returned region.
 4. A **first-class agent-protocol surface** (MCP for tools, JSON-RPC 2.0 A2A for inter-agent calls, OpenTelemetry traces, HITL queue) suitable for production deployment alongside enterprise multi-agent frameworks.
 
@@ -141,7 +141,7 @@ The `GapDetectorAgent` walks a trajectory, finds gaps where consecutive samples 
 
 $$\mathrm{AGM}(g) \;=\; \lambda \, \big(1 - p_{\text{phys}}(g)\big) \;+\; (1 - \lambda)\, p_{\text{data}}(g),$$
 
-where $p_{\text{phys}} = \min(1,\, v_{\max} / v_{\text{required}})$ and $p_{\text{data}}$ is a calibrated tail probability over the Pi-DPM (Sharma et al., 2025) reconstruction error.
+where $p_{\text{phys}} = \min(1,\, v_{\max} / v_{\text{required}})$ and $p_{\text{data}}$ is a tail probability over the Pi-DPM (Sharma et al., 2025) reconstruction error. When PyTorch and the vendored `app.components.pidpm` package are importable, the gap detector synthesizes the gap segment as the straight-line interpolation between the prism's two anchors, scores it with the real Pi-DPM diffusion + physics anomaly head, and maps the anomaly score to $p_{\text{data}} = 1 - e^{-\text{score}}$. When torch is unavailable the detector falls back to a deterministic distance-and-duration surrogate, so the framework stays importable and usable without torch.
 
 The `RendezvousFinderAgent` pairwise-intersects prisms; in the dual-convergence variant DC-TGARD (Sharma et al., 2022a) it walks the time interval from both ends, pruning slices whose intersection becomes empty, and records the tightened time window $[\,t_0 + (t_1 - t_0)\,\ell,\; t_0 + (t_1 - t_0)\,h\,]$. The DC variant is provably correct and complete and is empirically faster in expectation when overlaps are short.
 
@@ -176,7 +176,7 @@ Numbers are illustrative of the pipeline behavior; production instrumentation sh
 GeoTrace-Agent is a research-engineering blueprint. Three caveats deserve naming:
 
 1. The geometric kernel uses a local equirectangular projection that is accurate to first order; for ocean-scale anchors a UTM zone or a geodesic Vincenty distance would tighten the bound.
-2. The Pi-DPM reconstruction-error proxy used in $p_{\text{data}}$ is loaded from a frozen TorchScript checkpoint; production deployments should retrain Pi-DPM on the live trajectory distribution.
+2. The $p_{\text{data}}$ term calls the real vendored Pi-DPM (`app.components.pidpm`) with a small default config and randomly-initialized weights when PyTorch is available, and falls back to a deterministic distance-and-duration surrogate otherwise. Neither path is a trained-on-live-data scorer: production deployments should load a Pi-DPM checkpoint trained on the live trajectory distribution before relying on $p_{\text{data}}$.
 3. The planner's typed-DAG is a strong inductive bias: prompts that genuinely require free-form chain of thought (counterfactual reasoning, pure analogical inference) are not the system's strength.
 
 **Connection to RL.** The HITL queue exports its verdicts as preference triples consumable by direct preference optimization (Rafailov et al., 2023) or group-relative policy optimization (Shao et al., 2024) in our sibling project [Pi-GRPO](https://github.com/arunshar/pi-grpo). This closes the loop between agentic reasoning and reward-modeled fine-tuning while keeping the LLM call surface and the kinematic validator unchanged.
