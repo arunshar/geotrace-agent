@@ -36,6 +36,7 @@ dependencies = [
   "rich>=13.7",
   "orjson>=3.10",
   "prometheus-client>=0.20",
+  "temporalio>=1.29",
 ]
 
 [project.optional-dependencies]
