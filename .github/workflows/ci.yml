@@ -59,7 +59,7 @@ jobs:
           cd paper
           make pdf
       - name: Upload PDF artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: geotrace_agent_neurips_pdf
           path: paper/geotrace_agent_neurips.pdf
