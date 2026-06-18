@@ -272,12 +272,13 @@ The orchestrator runs the PlanGraph under a hard \emph{token, tool-call, and wal
 GeoTrace-Agent speaks the modern agent-protocol stack natively. The prism kernel is exposed as a Model Context Protocol \citep{anthropic2024mcp} server so any MCP-aware client can call \texttt{prism.compute} or \texttt{prism.intersect} without going through this app's HTTP surface; the agent itself advertises a capability card at \texttt{/a2a/.well-known/capabilities} and accepts JSON-RPC 2.0 Agent-to-Agent (A2A) calls \citep{google2024a2a}, mirroring the cross-agent communication patterns recently popularized in enterprise multi-agent frameworks \citep{centific2025legalwiz, centific2025contragen, centific2025art}. Ambiguous traces (validator-confidence below a tunable threshold) flow into a Postgres human-in-the-loop (HITL) queue whose reviewer verdicts can be exported as preference triples for downstream direct-preference optimization \citep{rafailov2023dpo}, closing the loop between agentic reasoning and reinforcement learning.
 
 \smallskip
-We make four contributions:
+We make five contributions:
 \begin{enumerate}[leftmargin=*]
   \item a \textbf{typed PlanGraph} chain-of-thought representation that is statically validated, parallel-sortable, and replayable, with explicit per-node token and confidence priors;
   \item a \textbf{three-layer efficiency stack} (adaptive prompt compression, in-flight tool deduplication, hybrid exact + semantic cache) that reduces median per-query token spend by approximately 40\,\% on the golden evaluation set;
-  \item a \textbf{deterministic time-geographic kernel} integrating Hägerstrand prisms with the STAGD-DRM gap detector and the TGARD / DC-TGARD rendezvous finder, gated by a kinematic validator that guarantees physical feasibility of every returned region; and
-  \item a \textbf{first-class agent-protocol surface} (MCP for tools, JSON-RPC 2.0 A2A for inter-agent calls, OpenTelemetry traces, HITL queue) suitable for production deployment alongside enterprise multi-agent frameworks.
+  \item a \textbf{deterministic time-geographic kernel} integrating Hägerstrand prisms with the STAGD-DRM gap detector and the TGARD / DC-TGARD rendezvous finder, gated by a kinematic validator that guarantees physical feasibility of every returned region;
+  \item a \textbf{first-class agent-protocol surface} (MCP for tools, JSON-RPC 2.0 A2A for inter-agent calls, OpenTelemetry traces, HITL queue) suitable for production deployment alongside enterprise multi-agent frameworks; and
+  \item a \textbf{durable-orchestration port} (Section \ref{sec:durable}) that recognizes the neuro-symbolic trust boundary as a \emph{determinism} boundary and maps it onto a durable workflow / activity split, inheriting the engine's crash-safe replay and a human-in-the-loop that survives worker restarts (exercised in the engine's test environment), with a lossless, geometrically-faithful serialization contract for the space-time prism that crosses that boundary.
 \end{enumerate}
 
 % ============================================================
@@ -554,6 +555,47 @@ The exact cache is safe when the key includes tool name, normalized arguments, c
 The validator does not force every uncertain case into a binary answer. When confidence falls below the configured threshold, the response marks \texttt{hitl\_required=true} and writes a Postgres row containing the question, PlanGraph, regions, validator outputs, and trace id. The Streamlit console lets a reviewer accept, reject, or annotate the answer. The review event is later exportable as a preference triple for Pi-GRPO. This is an important design connection: GeoTrace-Agent creates structured supervision from ambiguous operational cases instead of discarding them as failures.
 
 % ============================================================
+\section{Durable orchestration via the neuro-symbolic determinism boundary}
+\label{sec:durable}
+
+The trust boundary of Section \ref{sec:arch} is not only an auditing device; it is a \emph{determinism} boundary, and that observation is what makes GeoTrace-Agent portable to a durable-execution runtime. Only two steps in a run are truly nondeterministic: the planner that emits the PlanGraph and the answer synthesizer, both LLM calls whose output can vary for a fixed input. Every other step is pure, the same input yielding the same output every time: the prism kernel, TGARD / DC-TGARD, the gap detector (STAGD/DRM plus a fixed evaluation-mode Pi-DPM forward pass, with no sampling), the kinematic validator, the budget guard, and confidence aggregation. Durable-execution engines such as Temporal \citep{temporal2024durable} demand exactly this split. Workflow code must be deterministic so the engine can reconstruct it by replaying its recorded event history; anything nondeterministic or side-effecting must be an \emph{activity}, whose result is recorded once and replayed verbatim. GeoTrace-Agent's neuro / symbolic line therefore coincides with the workflow / activity line (Table \ref{tab:durable}). The conceptual mapping is one-to-one, but the port is not a mechanical lift: it required net-new, runtime-specific engineering, the version-stable serialization contract below and a dump-then-validate step that re-anchors result class identity across the separate workflow and activity sandboxes. That this engineering is small and localized rather than a rewrite is itself the evidence that the boundary is real.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{p{0.30\linewidth}p{0.18\linewidth}p{0.42\linewidth}}
+\toprule
+GeoTrace step & Placement & Why \\
+\midrule
+Topo schedule, budget guard, confidence aggregation, HITL gate & workflow & deterministic and side-effect-free; must replay identically \\
+Planner, answer synthesizer & activity & nondeterministic (LLM calls); recorded once so replay never re-calls the model \\
+Prism, TGARD / DC-TGARD, gap detector, kinematic validation & activity & pure, but kept out of the deterministic sandbox because they import heavy numeric and geometric code \\
+Semantic-cache read, HITL enqueue & activity & external side effect; at-least-once and idempotent (dedup on the per-run trace id) \\
+\bottomrule
+\end{tabular}
+\caption{The neuro-symbolic boundary is the workflow / activity boundary. The language-model steps \emph{must} be activities for correctness; the geometric kernels are activities only for sandbox hygiene, a distinction the port makes explicit.}
+\label{tab:durable}
+\end{table}
+
+\paragraph{Relation to durable-execution systems.}
+Durable execution is not new. It descends from sagas \citep{garciamolina1987sagas} and the broader event-sourcing and deterministic-replay tradition, and it is offered by several workflow engines (AWS Step Functions, Netflix Conductor, Apache Airflow, and Temporal's Cadence lineage \citep{temporal2024durable}). We claim none of that machinery as a contribution. The contribution is the observation that a neuro-symbolic spatial agent already carries a determinism boundary, its trust boundary, that coincides with the one such engines require, so the agent maps onto durable execution without re-architecture; and the geometric-faithfulness serialization contract below that lets symbolic objects cross that boundary intact. The novelty is the coincidence and the contract, not durable execution itself.
+
+\paragraph{What durability buys.}
+Three properties follow. First, crash safety: a worker dying mid-run loses nothing, because the plan, every completed node, and the synthesized answer are in history, and a redelivered activity that already finished is replayed as its recorded result rather than re-run. Second, a durable human-in-the-loop. The bare orchestrator awaits its low-confidence enqueue and then returns immediately, never blocking the run on the reviewer's verdict; under durable execution the workflow enqueues and then waits on a human-approval signal through a durable wait condition, parking the run for as long as a reviewer takes, minutes or days, and surviving worker restarts. The signal carries a verdict and an optional rewrite: a supplied correction replaces the answer, otherwise the synthesized answer ships unchanged. That long-lived, human-gated run is precisely the pattern durable-execution AI stacks productize. Third, a live, queryable run: a synchronous query returns stage, tokens, and cost without mutation, while the review verdict arrives as an asynchronous signal. These are properties the engine provides by construction, not results we measure under injected faults; we exercise them in the time-skipping test environment (see Honest scope below), which is what turns the abstract's ``replayable'' claim and the human-in-the-loop queue of Section \ref{sec:methods} from design intent into engine-guaranteed behavior.
+
+\paragraph{Determinism discipline and effectively-once side effects.}
+The workflow takes its wallclock from the engine's deterministic clock and its trace id from the engine's seeded generator, performs no I/O and no model calls, and runs only pure, side-effect-free work inline (the plan-graph topological schedule, the budget guard, and confidence aggregation); every model call and every side effect is an activity with a per-call timeout and a bounded retry, the language-model steps getting a longer deadline than the geometric kernels. Side effects are effectively-once, that is at-least-once delivery plus idempotency, with the HITL enqueue deduplicating on the replay-stable per-run trace id (a workflow-seeded UUID, constant across replays). We do not claim true exactly-once execution of arbitrary side effects, which is not deliverable, and the implementation is explicit about that.
+
+\paragraph{The serialization contract.}
+The one piece of real engineering the port requires is a version-stable serialization for the intermediate symbolic objects that cross the activity boundary. A prism produced by a PRISM activity and consumed by a downstream TGARD activity cannot be handed over as a live in-memory handle; it is packed into a flat payload and rebuilt by the consumer. We implement this round trip for the prism and verify two properties: it is lossless through a JSON round trip (every field of the frozen prism is restored, nothing recomputed), and it is geometrically faithful (an intersection computed against a rebuilt prism equals one computed against the original). The serialized payload is the contract that keeps the workflow free of live geometric handles.
+
+\paragraph{Honest scope.}
+The runtime is not on GeoTrace-Agent's production path today. The workflow logic, the determinism boundary, and the durable human-in-the-loop signal are implemented and exercised in the engine's time-skipping test environment: the high-confidence path returns the synthesized answer, and the low-confidence path durably waits for the review signal and then ships the reviewer's correction when one is supplied. The symbolic geometry path runs end to end through the real activity boundary, with two prisms serialized by PRISM activities, rebuilt and intersected by a TGARD activity into a non-empty rendezvous region; the language-model activities are mocked in these tests, and we do not yet inject worker faults to measure recovery time. The remaining production wiring is pointing the planner and summarizer activities at live model endpoints and the cache and HITL activities at their real stores.
+
+\paragraph{Composition with a model-serving stack.}
+Durability and model serving are orthogonal and compose cleanly: the durable-execution engine owns control, deciding what runs, in what order, how it retries, and when it waits for a human, while a model-serving stack such as NVIDIA NeMo \citep{nvidia2024nemo} owns the tokens. The planner and synthesizer activities call served models, guardrails back the input and output filters, and a retriever backs the \texttt{retrieve.semantic} node; because every model call is an activity, a slow or failed endpoint is retried and recorded without breaking workflow determinism. The boundary stays clean: the model produces tokens, always behind an activity, and the engine decides everything else.
+
+% ============================================================
 \section{Experiments}
 \label{sec:expts}
 
@@ -769,6 +811,9 @@ S. Dodge, R. Weibel, and A.-K. Lautenschütz. Towards a taxonomy of movement pat
 \bibitem[Egenhofer, 1994]{egenhofer1994spatial}
 M. J. Egenhofer. Spatial SQL: A query and presentation language. \emph{IEEE TKDE}, 6(1):86--95, 1994.
 
+\bibitem[Garcia-Molina and Salem, 1987]{garciamolina1987sagas}
+H. Garcia-Molina and K. Salem. Sagas. \emph{Proceedings of the ACM SIGMOD International Conference on Management of Data}, 1987.
+
 \bibitem[Ghallab et al., 1998]{ghallab1998pddl}
 M. Ghallab et al. PDDL: The planning domain definition language. Technical report, 1998.
 
@@ -817,6 +862,9 @@ H. J. Miller. Modelling accessibility using space-time prism concepts within geo
 \bibitem[Miller, 2005]{miller2005measuring}
 H. J. Miller. A measurement theory for time geography. \emph{Geographical Analysis}, 37(1):17--45, 2005.
 
+\bibitem[NVIDIA, 2024]{nvidia2024nemo}
+NVIDIA. NeMo: a framework and toolkit for building generative AI agents and models (Agent Toolkit, Guardrails, Retriever, NIM microservices). 2024. \url{https://github.com/NVIDIA/NeMo}.
+
 \bibitem[OpenAI, 2024a]{openai2024gpt4}
 OpenAI. GPT-4 technical report. \emph{arXiv:2303.08774}, 2024.
 
@@ -855,6 +903,9 @@ H. Samet. \emph{Applications of Spatial Data Structures: Computer Graphics, Imag
 
 \bibitem[Sellis et al., 1987]{sellis1987multiple}
 T. Sellis, N. Roussopoulos, and C. Faloutsos. The R+-tree: A dynamic index for multi-dimensional objects. \emph{VLDB}, 1987.
+
+\bibitem[Temporal, 2024]{temporal2024durable}
+Temporal Technologies. Temporal: durable execution for reliable distributed applications. 2024. \url{https://temporal.io}.
 
 \bibitem[Wang et al., 2023]{wang2023plan}
 L. Wang et al. Plan-and-Solve prompting: Improving zero-shot chain-of-thought reasoning by large language models. \emph{ACL}, 2023.

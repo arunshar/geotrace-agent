@@ -10,11 +10,13 @@ so the port is almost a one-to-one mapping rather than a rewrite.
 A GeoTrace run interleaves two kinds of step:
 
 - Nondeterministic, model-driven: the LLM planner that decomposes a question into
-  a plan graph, the gap detector, the answer synthesizer. Same input, possibly
-  different output. These are the "neuro" steps.
+  a plan graph, and the answer synthesizer. Same input, possibly different output.
+  These are the "neuro" steps.
 - Deterministic, symbolic: the space-time prism, TGARD / DC-TGARD rendezvous
-  detection, kinematic validation, the budget guard, confidence aggregation. Same
-  input, same output, every time. These are the "symbolic" steps.
+  detection, the gap detector (STAGD/DRM plus a fixed eval-mode Pi-DPM forward
+  pass, no sampling), kinematic validation, the budget guard, confidence
+  aggregation. Same input, same output, every time. These are the "symbolic"
+  steps.
 
 Temporal demands exactly this split. Workflow code must be deterministic so it can
 be rebuilt by replaying its event history; anything nondeterministic or
@@ -24,9 +26,9 @@ verbatim. So:
 | GeoTrace step | Nature | Temporal placement | Why |
 |---|---|---|---|
 | Plan-graph topo schedule, budget guard, confidence aggregation, HITL gate | deterministic symbolic | workflow (`workflows.py`) | must replay identically; no I/O |
-| LLM planner, gap detector, summarizer | nondeterministic | activity | recorded once so replay never re-calls the model and never drifts |
-| Space-time prism, TGARD/DC-TGARD, kinematic validation | deterministic symbolic | activity (by necessity, not by nature) | pure, but imports heavy geo/numeric code that must stay out of the workflow sandbox |
-| Semantic-cache read, HITL enqueue | side effect | activity, at-least-once, idempotent | external state; dedup on the workflow id |
+| LLM planner, summarizer | nondeterministic | activity | recorded once so replay never re-calls the model and never drifts |
+| Space-time prism, TGARD/DC-TGARD, gap detector, kinematic validation | deterministic symbolic | activity (by necessity, not by nature) | pure, but imports heavy geo/numeric code that must stay out of the workflow sandbox |
+| Semantic-cache read, HITL enqueue | side effect | activity, at-least-once, idempotent | external state; dedup on the replay-stable per-run trace id |
 
 The symbolic geo kernels are deterministic, so in principle they could run inline
 in the workflow; they are activities only to keep the deterministic sandbox free
@@ -46,7 +48,7 @@ correctness, the geo steps are activities for hygiene.
   long-lived, human-gated, exactly-once-side-effect run is precisely what
   Temporal's AI SDK productizes.
 - Effectively-once side effects. Activities are at-least-once, so each is
-  idempotent (the HITL enqueue dedups on the durable workflow id). Effectively-once
+  idempotent (the HITL enqueue dedups on the replay-stable per-run trace id). Effectively-once
   equals at-least-once delivery plus idempotency; true exactly-once execution of
   arbitrary side effects is not deliverable, and the code is honest about that.
 - A live, queryable run. `progress` is a synchronous query of stage/tokens/cost
