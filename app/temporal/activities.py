@@ -23,6 +23,7 @@ from typing import Any
 
 from temporalio import activity
 
+from app.components.space_time_prism import Prism
 from app.models import (
     AnchorPair,
     PlanGraph,
@@ -114,9 +115,17 @@ class GeoTraceActivities:
             if node.kind is PlanNodeKind.PRISM:
                 pair = AnchorPair(**node.inputs["pair"])
                 out = await self._orch.st_reasoner.compute(pair, q.domain)
-                # Serialize the prism so a downstream TGARD node can consume it
-                # across the activity boundary.
-                res.payload = {"prism": _jsonable(getattr(out, "prism", out))}
+                # Serialize the prism with its own version-stable round trip so a
+                # downstream TGARD node can rebuild the exact object across the
+                # activity boundary (a generic dict dump of a Prism is not
+                # JSON-stable). A test stand-in may already hand back a plain
+                # serializable object, in which case fall back to _jsonable.
+                prism_obj = getattr(out, "prism", out)
+                res.payload = {
+                    "prism": prism_obj.to_payload()
+                    if hasattr(prism_obj, "to_payload")
+                    else _jsonable(prism_obj)
+                }
                 res.regions = _regions(out)
             elif node.kind is PlanNodeKind.GAPS:
                 gd = self._orch.gap_detector
@@ -127,7 +136,14 @@ class GeoTraceActivities:
                 res.tokens_out = getattr(gd, "last_tokens_out", 0)
                 res.cost_usd = getattr(gd, "last_cost_usd", 0.0)
             elif node.kind in (PlanNodeKind.TGARD, PlanNodeKind.DC_TGARD):
-                prisms = [p.payload["prism"] for p in prior if "prism" in p.payload]
+                # Rebuild live Prism objects from the upstream PRISM nodes'
+                # serialized payloads; rendezvous.find needs real prisms (it calls
+                # intersect() on them), not the flat dicts that crossed the boundary.
+                prisms = [
+                    Prism.from_payload(p.payload["prism"])
+                    for p in prior
+                    if "prism" in p.payload
+                ]
                 method = "TGARD" if node.kind is PlanNodeKind.TGARD else "DC-TGARD"
                 out = await self._orch.rendezvous.find(prisms, method=method)
                 res.regions = _regions(out)

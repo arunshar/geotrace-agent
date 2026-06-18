@@ -21,6 +21,7 @@ import math
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 import numpy as np
 from shapely.affinity import rotate, translate
@@ -130,6 +131,47 @@ class Prism:
                 rotation_rad=rotation,
             ),
             proj=proj,
+        )
+
+    def to_payload(self) -> dict[str, Any]:
+        """Flat, JSON-stable serialization for the Temporal activity boundary.
+
+        A Prism holds two live pydantic models (the anchor pair and the base
+        ellipse) and a projection dataclass, none of which survive a generic
+        dict dump in a form that round-trips through Temporal's data converter.
+        This packs the prism into plain JSON so a PRISM activity can hand it to a
+        downstream TGARD activity across the boundary; `from_payload` is the exact
+        inverse. The round trip is lossless: every field is restored verbatim,
+        nothing is recomputed, so the reconstructed prism is identical to the one
+        the reasoner produced.
+        """
+
+        return {
+            "pair": self.pair.model_dump(mode="json"),
+            "v_max_mps": self.v_max_mps,
+            "duration_s": self.duration_s,
+            "feasible": self.feasible,
+            "base_ellipse": self.base_ellipse.model_dump(mode="json"),
+            "proj": {
+                "lat_ref_rad": self.proj.lat_ref_rad,
+                "lon_ref_rad": self.proj.lon_ref_rad,
+            },
+        }
+
+    @classmethod
+    def from_payload(cls, data: dict[str, Any]) -> Prism:
+        """Rebuild a Prism from `to_payload` output (the inverse round trip)."""
+
+        return cls(
+            pair=AnchorPair.model_validate(data["pair"]),
+            v_max_mps=data["v_max_mps"],
+            duration_s=data["duration_s"],
+            feasible=data["feasible"],
+            base_ellipse=GeoEllipse.model_validate(data["base_ellipse"]),
+            proj=_LocalProjection(
+                lat_ref_rad=data["proj"]["lat_ref_rad"],
+                lon_ref_rad=data["proj"]["lon_ref_rad"],
+            ),
         )
 
     def ellipse_at(self, t: datetime) -> GeoEllipse:
