@@ -195,7 +195,7 @@ class _FakeOrch:
     async def _compute(self, pair, domain):
         return SimpleNamespace(prism={"semi_major_m": 1000.0})
 
-    async def _validate(self, cands, domain):
+    async def _validate(self, cands, domain, anchors=None):
         return list(self._validate_regions)
 
     async def _summarize(self, *, question, plan, results, budget_tokens):
