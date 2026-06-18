@@ -53,7 +53,7 @@ class PiDPM(nn.Module):
 
     # --------------------------------------------------------------- io
     @classmethod
-    def from_checkpoint(cls, path: str, map_location: str | torch.device = "cpu") -> "PiDPM":
+    def from_checkpoint(cls, path: str, map_location: str | torch.device = "cpu") -> PiDPM:
         ckpt = torch.load(path, map_location=map_location)
         cfg = ckpt.get("cfg") or PiDPMConfig()
         model = cls(cfg)

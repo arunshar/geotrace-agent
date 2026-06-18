@@ -336,22 +336,22 @@ async def test_live_prism_to_tgard_path_produces_regions() -> None:
     from temporalio.contrib.pydantic import pydantic_data_converter
     from temporalio.testing import WorkflowEnvironment
 
-    async with await WorkflowEnvironment.start_time_skipping(
-        data_converter=pydantic_data_converter
-    ) as env:
-        async with _build_worker(env, _GeoOrch()):
-            handle = await env.client.start_workflow(
-                GeoTraceWorkflow.run,
-                QueryIn(question="Where could vessel A and vessel B have met?",
-                        domain="vessel"),
-                id="wf-geo", task_queue="geotrace-test",
-            )
-            # Pre-deliver a benign review signal: if the run happens to route to
-            # HITL it is released immediately (corrected_answer=None leaves the
-            # synthesized answer intact) so the time-skipping env never parks; if
-            # it does not, the buffered signal is simply never read.
-            await handle.signal(GeoTraceWorkflow.review, ReviewDecision(approved=True))
-            result = await handle.result()
+    async with (
+        await WorkflowEnvironment.start_time_skipping(data_converter=pydantic_data_converter) as env,
+        _build_worker(env, _GeoOrch()),
+    ):
+        handle = await env.client.start_workflow(
+            GeoTraceWorkflow.run,
+            QueryIn(question="Where could vessel A and vessel B have met?",
+                    domain="vessel"),
+            id="wf-geo", task_queue="geotrace-test",
+        )
+        # Pre-deliver a benign review signal: if the run happens to route to
+        # HITL it is released immediately (corrected_answer=None leaves the
+        # synthesized answer intact) so the time-skipping env never parks; if
+        # it does not, the buffered signal is simply never read.
+        await handle.signal(GeoTraceWorkflow.review, ReviewDecision(approved=True))
+        result = await handle.result()
 
     # The two serialized prisms were rebuilt and intersected by the real TGARD
     # kernel; a non-empty region set is only possible if the round trip worked.
