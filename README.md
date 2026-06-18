@@ -147,7 +147,7 @@ The `RendezvousFinderAgent` pairwise-intersects prisms; in the dual-convergence 
 
 ## 4.6 Kinematic validator (S-KBM gate)
 
-Every region returned to the user is forced through a `ValidatorAgent` that recomputes a worst-case required speed across the region's centroid and time window, compares against the per-domain envelope (vessel: 25 kt; vehicle: 130 km/h; pedestrian: 2 m/s; UAV: 30 m/s), and raises `KinematicViolation` on infeasibility. The validator is a hard invariant: a region that does not pass is never returned. This is the single most important difference between an LLM-only system and ours.
+Every region returned to the user is forced through a `ValidatorAgent` that applies a coarse closure-rate feasibility gate: it computes the rendezvous-region bbox diagonal and divides by the meet-time window to estimate a required closure speed. Because rendezvous may involve two movers converging, the guard compares this proxy against `2 * v_max` (with a 5% tolerance) rather than a single actor's speed envelope (vessel: 25 kt; vehicle: 130 km/h; pedestrian: 2 m/s; UAV: 30 m/s). This keeps the hard infeasibility invariant while avoiding false-positive `KinematicViolation` errors on valid prism intersections.
 
 ## 4.7 MCP server and A2A protocol
 
