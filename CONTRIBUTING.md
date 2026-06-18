@@ -8,6 +8,35 @@ Thanks for your interest. This is a research-engineering project; contributions 
 - Improvements to the geometric kernel (`app/components/space_time_prism.py`).
 - Performance, observability, or documentation improvements.
 
+## Before pushing
+
+Run the local CI gate, which mirrors the GitHub Actions `lint-type-test` job
+(ruff as a hard gate, mypy non-blocking, pytest as a hard gate):
+
+```bash
+make ci          # or: bash scripts/ci_local.sh
+```
+
+On a fresh clone, enable the pre-push hook so the gate runs automatically and
+blocks a push when it fails:
+
+```bash
+make hooks       # runs: git config core.hooksPath .githooks
+```
+
+The gate runs the same `ruff check app observability evaluation tests spaces scripts`
+that CI runs, so a lint failure is caught here first. If your local test env is
+missing an optional runtime dep (for example `redis` or `rtree`), the gate runs
+the collectable test subset and prints a clear `ENV-GAP:` warning rather than
+silently passing; CI installs the full dependency set and runs everything.
+
+Contributors who prefer the [pre-commit](https://pre-commit.com) framework can
+additionally enable the ruff autofix/format hooks in `.pre-commit-config.yaml`:
+
+```bash
+pip install pre-commit && pre-commit install
+```
+
 ## Before you open a PR
 
 Run all four locally:

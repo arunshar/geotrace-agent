@@ -1,5 +1,5 @@
 .PHONY: help venv install lint type test test-property cov security audit \
-        bench paper paper-clean clean verify ci
+        bench paper paper-clean clean verify ci ci-local hooks
 
 PY      ?= python
 UV      ?= uv
@@ -18,7 +18,9 @@ help:
 	@echo "  bench          run benchmarks"
 	@echo "  paper          build the NeurIPS PDF"
 	@echo "  verify         lint + type + test + cov + security (FAANG-style)"
-	@echo "  ci             alias for verify"
+	@echo "  ci             local CI gate mirroring GitHub Actions (scripts/ci_local.sh)"
+	@echo "  ci-local       alias for ci"
+	@echo "  hooks          enable the .githooks pre-push gate in this clone"
 	@echo "  clean          remove caches"
 
 venv:
@@ -61,7 +63,17 @@ verify: lint type cov security
 	@echo ""
 	@echo "FAANG verify pass."
 
-ci: verify
+# Local CI gate that reproduces .github/workflows/ci.yml (lint-type-test) using
+# the project test env. Run this before every push; the pre-push hook runs it too.
+ci:
+	bash scripts/ci_local.sh
+
+ci-local: ci
+
+# Point this clone at the committed pre-push hook (one-time, per clone).
+hooks:
+	git config core.hooksPath .githooks
+	@echo "core.hooksPath set to .githooks (pre-push gate enabled for this clone)."
 
 clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage coverage.xml htmlcov

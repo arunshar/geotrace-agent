@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# ----------------------------------------------------------------------------
+# .githooks/pre-push
+#
+# Primary local CI gate. Runs scripts/ci_local.sh and blocks the push if it
+# fails, so the same checks GitHub Actions enforces (ruff hard gate, mypy
+# non-blocking, pytest hard gate) are caught before anything reaches origin.
+#
+# Enable on a fresh clone with:
+#   git config core.hooksPath .githooks      # or: make hooks
+#
+# Emergency bypass (use sparingly, you own the consequences):
+#   git push --no-verify
+# ----------------------------------------------------------------------------
+set -uo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+GATE="${REPO_ROOT}/scripts/ci_local.sh"
+
+if [ ! -x "${GATE}" ]; then
+  echo "pre-push: ${GATE} missing or not executable; cannot verify. Blocking push." >&2
+  exit 1
+fi
+
+echo "pre-push: running local CI gate (scripts/ci_local.sh) ..."
+bash "${GATE}"
+GATE_EXIT=$?
+
+if [ "${GATE_EXIT}" -ne 0 ]; then
+  echo "" >&2
+  echo "pre-push: local CI gate FAILED (exit ${GATE_EXIT}). Push blocked." >&2
+  echo "pre-push: fix the issues above, or bypass with 'git push --no-verify'." >&2
+  exit 1
+fi
+
+echo "pre-push: local CI gate passed. Allowing push."
+exit 0
