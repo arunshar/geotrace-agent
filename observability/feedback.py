@@ -22,6 +22,12 @@ class HitlQueue:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self._mem: list[dict[str, Any]] = []
+        # trace ids already enqueued, so a retried at-least-once delivery does
+        # not write the same review twice. The Temporal activity is at-least-once
+        # (it carries a retry policy), so this dedup is what makes the enqueue
+        # effectively-once; in production the Postgres write is an
+        # ON CONFLICT (trace_id) DO NOTHING upsert with the same key.
+        self._seen: set[str] = set()
 
     @classmethod
     async def connect(cls, settings: Settings) -> HitlQueue:
@@ -38,6 +44,10 @@ class HitlQueue:
         results: dict[str, Any],
         regions: list[RendezvousRegion],
     ) -> None:
+        if trace_id in self._seen:
+            # Idempotent on the replay-stable trace id: a redelivered enqueue
+            # for a run already queued is a no-op, not a duplicate row.
+            return
         item = {
             "trace_id": trace_id,
             "question": q.question,
@@ -47,6 +57,7 @@ class HitlQueue:
             "ts": datetime.now(UTC).isoformat(),
         }
         self._mem.append(item)
+        self._seen.add(trace_id)
         log.info("hitl_enqueue", **{k: v for k, v in item.items() if k != "regions"})
 
     async def label(self, payload: FeedbackIn) -> int:

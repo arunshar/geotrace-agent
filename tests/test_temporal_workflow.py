@@ -125,6 +125,35 @@ def test_reconstructed_prism_is_geometrically_identical() -> None:
     assert direct.equals(via_payload)
 
 
+@pytest.mark.asyncio
+async def test_hitl_enqueue_is_idempotent_on_trace_id() -> None:
+    """At-least-once delivery must not double-enqueue the same run.
+
+    The Temporal hitl_enqueue activity carries a retry policy, so it can fire
+    more than once for a single run; the queue dedups on the replay-stable
+    trace id, which is what makes the side effect effectively-once rather than
+    at-least-once. Three redeliveries of the same trace id must leave one row.
+    """
+    from app.config import get_settings
+    from app.models import PlanGraph, PlanNode, PlanNodeKind, QueryIn
+    from observability.feedback import HitlQueue
+
+    queue = HitlQueue(get_settings())
+    q = QueryIn(question="Where could vessel A and vessel B have met?")
+    plan = PlanGraph(
+        nodes=(PlanNode(id="v1", kind=PlanNodeKind.VALIDATE, confidence_prior=0.4),),
+        rationale="x",
+    )
+    region = _region(0.4)
+    for _ in range(3):  # redelivered three times by at-least-once retry
+        await queue.enqueue("trace-xyz", q, plan, {}, [region])
+    assert len(queue._mem) == 1
+
+    # a distinct run is a distinct row
+    await queue.enqueue("trace-abc", q, plan, {}, [region])
+    assert len(queue._mem) == 2
+
+
 # ----------------------------------------------------------- fake orchestrator
 
 

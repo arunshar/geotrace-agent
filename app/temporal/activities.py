@@ -202,7 +202,7 @@ class GeoTraceActivities:
         """Enqueue a low-confidence run for human review.
 
         At-least-once delivery means this can fire twice on a retry, so the queue
-        write must be idempotent on trace_id (the durable workflow id is the
-        natural dedup key). The workflow then waits on the review signal.
+        write is idempotent on trace_id (a replay-stable, workflow-seeded per-run
+        id; see HitlQueue.enqueue). The workflow then waits on the review signal.
         """
         await self._orch.hitl.enqueue(trace_id, q, None, regions, regions)
