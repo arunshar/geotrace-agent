@@ -151,7 +151,7 @@ class GeoTraceActivities:
                 cands: list[RendezvousRegion] = []
                 for p in prior:
                     cands.extend(p.regions)
-                out = await self._orch.validator.validate(cands, domain=q.domain)
+                out = await self._orch.validator.validate(cands, domain=q.domain, anchors=q.anchors)
                 res.regions = _regions(out)
             elif node.kind is PlanNodeKind.RETRIEVE:
                 out = await self._orch.cache.retrieve(node.inputs.get("query", q.question))

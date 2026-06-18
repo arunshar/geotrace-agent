@@ -216,7 +216,7 @@ class Orchestrator:
                 out = await self.rendezvous.find(upstream_prisms, method=method)
             elif node.kind is PlanNodeKind.VALIDATE:
                 cands = [r for r in prior.get(node.deps[0], []) if isinstance(r, RendezvousRegion)] if node.deps else []
-                out = await self.validator.validate(cands, domain=q.domain)
+                out = await self.validator.validate(cands, domain=q.domain, anchors=q.anchors)
             elif node.kind is PlanNodeKind.RETRIEVE:
                 out = await self.cache.retrieve(node.inputs.get("query", q.question))
                 rec.cache_hit = True
