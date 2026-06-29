@@ -1,0 +1,74 @@
+{
+  "summary": {
+    "pass_rate": 0.75,
+    "p50_latency_s": 28.928495666499657,
+    "p95_latency_s": null,
+    "mean_tokens": 2804.5
+  },
+  "rows": [
+    {
+      "id": "g-001",
+      "ok": false,
+      "error": "wallclock exceeded"
+    },
+    {
+      "id": "g-002",
+      "ok": false,
+      "error": "prism.compute requires at least two anchors but none were provided"
+    },
+    {
+      "id": "g-003",
+      "ok": true,
+      "latency_s": 21.454464249996818,
+      "tokens": 1978,
+      "cost_usd": 0.01743,
+      "n_regions": 0,
+      "confidence": 0.92
+    },
+    {
+      "id": "g-101",
+      "ok": true,
+      "latency_s": 27.750099124998087,
+      "tokens": 3131,
+      "cost_usd": 0.029684999999999996,
+      "n_regions": 2,
+      "confidence": 0.569622134329724
+    },
+    {
+      "id": "g-102",
+      "ok": true,
+      "latency_s": 30.565031375008402,
+      "tokens": 3351,
+      "cost_usd": 0.033021,
+      "n_regions": 2,
+      "confidence": 0.572407791188198
+    },
+    {
+      "id": "g-103",
+      "ok": true,
+      "latency_s": 31.89837224999792,
+      "tokens": 3431,
+      "cost_usd": 0.035373,
+      "n_regions": 2,
+      "confidence": 0.5728532281897682
+    },
+    {
+      "id": "g-104",
+      "ok": true,
+      "latency_s": 30.106892208001227,
+      "tokens": 3068,
+      "cost_usd": 0.03084,
+      "n_regions": 0,
+      "confidence": 0.82
+    },
+    {
+      "id": "g-105",
+      "ok": true,
+      "latency_s": 17.2289254579955,
+      "tokens": 1868,
+      "cost_usd": 0.01542,
+      "n_regions": 0,
+      "confidence": 0.95
+    }
+  ]
+}

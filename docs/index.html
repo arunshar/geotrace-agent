@@ -305,10 +305,10 @@
     <table class="tbl">
       <thead><tr><th>Metric (live golden-set run, Sonnet 4.6)</th><th class="num">Value</th></tr></thead>
       <tbody>
-        <tr><td>Pass rate</td><td class="num">66.7% (2 of 3)</td></tr>
-        <tr><td>Mean tokens / query</td><td class="num">~2,736</td></tr>
+        <tr><td>Pass rate (8-query set, 3 runs)</td><td class="num">75-100% (mean ~87.5%)</td></tr>
+        <tr><td>Mean tokens / query</td><td class="num">~2,713</td></tr>
         <tr><td>Mean cost / query (USD)</td><td class="num">~0.026</td></tr>
-        <tr><td>p50 latency (s)</td><td class="num">~28</td></tr>
+        <tr><td>p50 latency (s)</td><td class="num">~26-29</td></tr>
       </tbody>
     </table>
     <p>Cache ablation: the exact/semantic response cache measured on identical repeats.</p>
@@ -320,7 +320,7 @@
         <tr><td>cache off, warm (control)</td><td class="num">2,330</td><td class="num">0.022</td><td class="num">~20-28 s</td></tr>
       </tbody>
     </table>
-    <div class="callout honest"><b>Honest framing.</b> These are <b>reproduced numbers</b> from a live run, checked in under <span class="kbd">evaluation/eval_results/</span> and <span class="kbd">evaluation/ablation_results/</span>. The golden set is small (3 queries) and latency reflects live, sequential API round-trips. The cache eliminates LLM cost on repeated queries; on novel queries it does not fire, so there is no blanket per-query reduction. An in-flight tool deduplicator is implemented but not yet wired into the run path, so it is excluded from these numbers. The open piece is an LLM judge for the free-text summary.</div>
+    <div class="callout honest"><b>Honest framing.</b> These are <b>reproduced numbers</b> from live runs, checked in under <span class="kbd">evaluation/eval_results/</span> and <span class="kbd">evaluation/ablation_results/</span>. The golden set was grown to <b>8 vessel queries</b> (anchors grounded in the real space-time-prism feasibility, including a disjoint-window negative control); the pass-rate varies 75-100% across runs because of two non-deterministic failure modes (an occasional wallclock-budget timeout and a planner mis-plan on the anchorless gap query). p95 still needs 20+ cases. Latency reflects live, sequential API round-trips. The cache eliminates LLM cost on repeated queries; on novel queries it does not fire, so there is no blanket per-query reduction. An in-flight tool deduplicator is implemented but not yet wired into the run path, so it is excluded from these numbers. The open piece is an LLM judge for the free-text summary.</div>
   </div>
 </section>
 

@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "pass_rate": 1.0,
+    "p50_latency_s": 25.706010833499022,
+    "p95_latency_s": null,
+    "mean_tokens": 2705.25
+  },
+  "rows": [
+    {
+      "id": "g-001",
+      "ok": true,
+      "latency_s": 25.195647000000463,
+      "tokens": 2922,
+      "cost_usd": 0.02751,
+      "n_regions": 2,
+      "confidence": 0.5916167586901077
+    },
+    {
+      "id": "g-002",
+      "ok": true,
+      "latency_s": 19.269171040999936,
+      "tokens": 1857,
+      "cost_usd": 0.017019,
+      "n_regions": 0,
+      "confidence": 0.6666666666666666
+    },
+    {
+      "id": "g-003",
+      "ok": true,
+      "latency_s": 17.718307249990175,
+      "tokens": 1842,
+      "cost_usd": 0.01539,
+      "n_regions": 0,
+      "confidence": 0.95
+    },
+    {
+      "id": "g-101",
+      "ok": true,
+      "latency_s": 26.21637466699758,
+      "tokens": 3089,
+      "cost_usd": 0.029139,
+      "n_regions": 2,
+      "confidence": 0.5446221343297241
+    },
+    {
+      "id": "g-102",
+      "ok": true,
+      "latency_s": 26.638640791992657,
+      "tokens": 3121,
+      "cost_usd": 0.029571,
+      "n_regions": 2,
+      "confidence": 0.572407791188198
+    },
+    {
+      "id": "g-103",
+      "ok": true,
+      "latency_s": 27.81493799999589,
+      "tokens": 3104,
+      "cost_usd": 0.030539999999999998,
+      "n_regions": 2,
+      "confidence": 0.5778532281897684
+    },
+    {
+      "id": "g-104",
+      "ok": true,
+      "latency_s": 37.04186016699532,
+      "tokens": 3636,
+      "cost_usd": 0.039071999999999996,
+      "n_regions": 0,
+      "confidence": 0.85
+    },
+    {
+      "id": "g-105",
+      "ok": true,
+      "latency_s": 20.426713332999498,
+      "tokens": 2071,
+      "cost_usd": 0.018357,
+      "n_regions": 0,
+      "confidence": 0.95
+    }
+  ]
+}

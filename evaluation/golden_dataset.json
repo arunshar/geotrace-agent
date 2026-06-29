@@ -5,16 +5,35 @@
       "id": "g-001",
       "question": "Could VESSEL-1234 have rendezvoused with VESSEL-9876 between 2026-01-15T06:00Z and 12:00Z near 56N 162W?",
       "anchors": [
-        {"lat": 56.10, "lon": -162.05, "t": "2026-01-15T06:00:00Z"},
-        {"lat": 56.30, "lon": -162.40, "t": "2026-01-15T12:00:00Z"},
-        {"lat": 56.12, "lon": -162.08, "t": "2026-01-15T06:00:00Z"},
-        {"lat": 56.28, "lon": -162.34, "t": "2026-01-15T12:00:00Z"}
+        {
+          "lat": 56.1,
+          "lon": -162.05,
+          "t": "2026-01-15T06:00:00Z"
+        },
+        {
+          "lat": 56.3,
+          "lon": -162.4,
+          "t": "2026-01-15T12:00:00Z"
+        },
+        {
+          "lat": 56.12,
+          "lon": -162.08,
+          "t": "2026-01-15T06:00:00Z"
+        },
+        {
+          "lat": 56.28,
+          "lon": -162.34,
+          "t": "2026-01-15T12:00:00Z"
+        }
       ],
       "domain": "vessel",
       "expected": {
         "regions_min": 1,
         "regions_max": 4,
-        "method_in": ["TGARD", "DC-TGARD"],
+        "method_in": [
+          "TGARD",
+          "DC-TGARD"
+        ],
         "kinematic_pass": true
       }
     },
@@ -32,13 +51,185 @@
       "id": "g-003",
       "question": "Compute the prism between (56.10, -162.05, 06:00Z) and (56.30, -162.40, 12:00Z).",
       "anchors": [
-        {"lat": 56.10, "lon": -162.05, "t": "2026-01-15T06:00:00Z"},
-        {"lat": 56.30, "lon": -162.40, "t": "2026-01-15T12:00:00Z"}
+        {
+          "lat": 56.1,
+          "lon": -162.05,
+          "t": "2026-01-15T06:00:00Z"
+        },
+        {
+          "lat": 56.3,
+          "lon": -162.4,
+          "t": "2026-01-15T12:00:00Z"
+        }
       ],
       "domain": "vessel",
       "expected": {
         "feasible": true,
         "polygon_required": true
+      }
+    },
+    {
+      "id": "g-101",
+      "question": "Could VESSEL-2200 have rendezvoused with VESSEL-3100 between 2026-02-10T06:00Z and 12:00Z near 27.6N 90.1W in the Gulf of Mexico?",
+      "anchors": [
+        {
+          "lat": 27.5,
+          "lon": -90.0,
+          "t": "2026-02-10T06:00:00Z"
+        },
+        {
+          "lat": 27.7,
+          "lon": -90.2,
+          "t": "2026-02-10T12:00:00Z"
+        },
+        {
+          "lat": 27.55,
+          "lon": -90.05,
+          "t": "2026-02-10T06:00:00Z"
+        },
+        {
+          "lat": 27.65,
+          "lon": -90.15,
+          "t": "2026-02-10T12:00:00Z"
+        }
+      ],
+      "domain": "vessel",
+      "expected": {
+        "regions_min": 1,
+        "regions_max": 4,
+        "method_in": [
+          "TGARD",
+          "DC-TGARD",
+          "STAGD",
+          "STP"
+        ],
+        "kinematic_pass": true
+      }
+    },
+    {
+      "id": "g-102",
+      "question": "Did VESSEL-4400 and VESSEL-4401 have a feasible meeting window between 2026-02-10T06:00Z and 10:00Z near 56.05N 3.05E in the North Sea?",
+      "anchors": [
+        {
+          "lat": 56.0,
+          "lon": 3.0,
+          "t": "2026-02-10T06:00:00Z"
+        },
+        {
+          "lat": 56.1,
+          "lon": 3.1,
+          "t": "2026-02-10T10:00:00Z"
+        },
+        {
+          "lat": 56.05,
+          "lon": 3.05,
+          "t": "2026-02-10T06:00:00Z"
+        },
+        {
+          "lat": 56.02,
+          "lon": 3.02,
+          "t": "2026-02-10T10:00:00Z"
+        }
+      ],
+      "domain": "vessel",
+      "expected": {
+        "regions_min": 1,
+        "regions_max": 4,
+        "method_in": [
+          "TGARD",
+          "DC-TGARD",
+          "STAGD",
+          "STP"
+        ],
+        "kinematic_pass": true
+      }
+    },
+    {
+      "id": "g-103",
+      "question": "Could VESSEL-7700 have rendezvoused with VESSEL-7701 between 2026-02-10T06:00Z and 11:00Z near 2.5N 101.0E in the Malacca Strait?",
+      "anchors": [
+        {
+          "lat": 2.5,
+          "lon": 101.0,
+          "t": "2026-02-10T06:00:00Z"
+        },
+        {
+          "lat": 2.55,
+          "lon": 101.05,
+          "t": "2026-02-10T11:00:00Z"
+        },
+        {
+          "lat": 2.52,
+          "lon": 101.02,
+          "t": "2026-02-10T06:00:00Z"
+        },
+        {
+          "lat": 2.48,
+          "lon": 100.98,
+          "t": "2026-02-10T11:00:00Z"
+        }
+      ],
+      "domain": "vessel",
+      "expected": {
+        "regions_min": 1,
+        "regions_max": 4,
+        "method_in": [
+          "TGARD",
+          "DC-TGARD",
+          "STAGD",
+          "STP"
+        ],
+        "kinematic_pass": true
+      }
+    },
+    {
+      "id": "g-104",
+      "question": "Could VESSEL-8800 (near 10N 60E, observed 2026-02-10T06:00-08:00Z) have rendezvoused with VESSEL-8900 (near 10N 64E, observed 2026-02-10T20:00-22:00Z)? Their observation windows are 12 hours apart.",
+      "anchors": [
+        {
+          "lat": 10.0,
+          "lon": 60.0,
+          "t": "2026-02-10T06:00:00Z"
+        },
+        {
+          "lat": 10.05,
+          "lon": 60.05,
+          "t": "2026-02-10T08:00:00Z"
+        },
+        {
+          "lat": 10.0,
+          "lon": 64.0,
+          "t": "2026-02-10T20:00:00Z"
+        },
+        {
+          "lat": 10.05,
+          "lon": 64.05,
+          "t": "2026-02-10T22:00:00Z"
+        }
+      ],
+      "domain": "vessel",
+      "expected": {
+        "regions_max": 0
+      }
+    },
+    {
+      "id": "g-105",
+      "question": "Compute the space-time prism between (40.00, -70.00, 06:00Z) and (40.10, -70.10, 12:00Z) on 2026-02-10.",
+      "anchors": [
+        {
+          "lat": 40.0,
+          "lon": -70.0,
+          "t": "2026-02-10T06:00:00Z"
+        },
+        {
+          "lat": 40.1,
+          "lon": -70.1,
+          "t": "2026-02-10T12:00:00Z"
+        }
+      ],
+      "domain": "vessel",
+      "expected": {
+        "feasible": true
       }
     }
   ]

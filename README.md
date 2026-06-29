@@ -158,17 +158,17 @@ The prism kernel is exposed as a Model Context Protocol (Anthropic, 2024c) serve
 
 **Golden dataset.** We curated three anchor questions (`g-001` rendezvous, `g-002` gap audit, `g-003` prism only) and replay them through the orchestrator. Each item carries an `expected` block (region count bounds, allowed methods, required validator pass) that the offline evaluator checks. Results are written under `evaluation/eval_results/<timestamp>.{md,json}`.
 
-**Latency, tokens, cost.** Live golden-set run, end to end against the planner with Claude Sonnet 4.6 (`evaluation/eval_results/20260629T080230Z.{md,json}`):
+**Latency, tokens, cost.** Live golden-set runs, end to end against the planner with Claude Sonnet 4.6, on the expanded 8-query golden set (`evaluation/eval_results/20260629T2251*, 2256*, 2301*.{md,json}`):
 
 | Metric | Value |
 |---|---|
-| Pass rate | 66.7% (2 of 3) |
-| Mean tokens / query | ~2,736 |
+| Pass rate | 75-100% across 3 live runs (mean ~87.5%) |
+| Mean tokens / query | ~2,713 |
 | Mean cost / query (USD) | ~0.026 |
-| p50 latency (s) | ~28 |
-| Per case | g-001: 3,560 tok, 0.036 USD, 34.1 s; g-003: 1,911 tok, 0.016 USD, 21.8 s |
+| p50 latency (s) | ~26-29 |
+| Golden set | 8 vessel queries: 4 rendezvous, 1 disjoint-window negative control, 2 prism, 1 denial-gap |
 
-The golden set is small (3 queries), so p95 (which needs at least 20 cases) is not reported, and g-002 is a non-deterministic planner mis-plan: the planner sometimes emits a `prism.compute` node for an anchorless gap query and trips the guardrail. Latency is dominated by live, sequential API round-trips. Region tightness (rendezvous polygon area over union MOBR area) is defined in the kernel but not scored by this run.
+The golden set was grown from 3 to **8 queries**; the 5 added cases have anchors grounded in the real Hägerstrand space-time-prism feasibility (verified independently before recording the expected bounds), including a disjoint-time-window negative control that must return zero regions. p95 still needs at least 20 cases, so it is not reported. The deterministic geometry cases (rendezvous feasibility, the infeasible negative control, prism) pass on every run; the pass-rate varies because of two non-deterministic failure modes: g-001 occasionally exceeds the wallclock budget, and g-002 is a planner mis-plan (it sometimes emits a `prism.compute` node for an anchorless gap query and trips the guardrail). Latency is dominated by live, sequential API round-trips. Region tightness (rendezvous polygon area over union MOBR area) is defined in the kernel but not scored by these runs.
 
 **Cache ablation** (`evaluation/ablation_results/20260629T080824Z.{md,json}`). The exact/semantic response cache is measured on identical repeats. Cold per-query cost is about 0.026 USD (~2,870 tokens); a warm repeat drops to zero tokens, zero cost, and sub-millisecond latency because the planner and summarizer are served from cache. With the cache disabled the warm repeat costs the same as the cold run (~0.022 USD), confirming the saving comes from the cache. The cache fires only on repeated or near-duplicate queries, so on novel queries it provides no saving and we make no blanket per-query reduction claim.
 

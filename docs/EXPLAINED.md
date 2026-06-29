@@ -157,7 +157,7 @@ Running the presets against the live planner (Claude Sonnet 4.6) is the fastest 
 - **Empty by construction, not by failure.** The two-anchor gap audit returns no gaps, and the prism-only and gap presets return no regions. That is correct: there is nothing to find in those inputs. The populated panels are the rendezvous region and the track-gap polygon, where the input actually contains the thing being detected.
 - **Passing the gate is not high confidence.** The rendezvous region clears the hard kinematic gate yet scores ~0.28. Passing means *physically possible*, not *likely*; confidence is a separate, softer signal, and conflating the two would overclaim.
 - **The anomaly term is a placeholder.** The AGM's P_data (the Pi-DPM term) runs on a default-initialized head unless a trained checkpoint is loaded, so today the score leans on the kinematic term P_phys. Training that head on the live trajectory distribution is item 3 of section 7.
-- **Illustrative, not powered.** These are single runs, not a benchmark; the reproduced cost numbers come from a 3-query golden set. The honesty rails in section 7 apply.
+- **Illustrative, not powered.** These are a handful of live runs, not a benchmark; the reproduced cost numbers come from an 8-query golden set (grown from 3). The honesty rails in section 7 apply.
 
 ---
 
@@ -177,9 +177,9 @@ The README is the NeurIPS-style paper. Map of where each idea is detailed:
 
 Stated plainly so the work is clear:
 
-1. **Reproduce the numbers (done).** `offline_eval` was run end to end with a live key on Claude Sonnet 4.6; the `evaluation/eval_results/<timestamp>.{md,json}` report, the cache ablation (`evaluation/ablation_results/`), and the validator audit (`evaluation/validator_audit_results/`) are checked in. Remaining: grow the golden set beyond 3 queries and wire the in-flight tool deduplicator into the run path.
+1. **Reproduce the numbers (done).** `offline_eval` was run end to end with a live key on Claude Sonnet 4.6; the `evaluation/eval_results/<timestamp>.{md,json}` report, the cache ablation (`evaluation/ablation_results/`), and the validator audit (`evaluation/validator_audit_results/`) are checked in. The golden set was grown from 3 to **8 queries** (3 live runs, pass-rate 75-100%). Remaining: grow it further toward the 20+ cases p95 needs, and wire the in-flight tool deduplicator into the run path.
 2. **Judge the free-text summary.** Add a calibrated LLM-as-judge (with a small human-labeled set) for the one part the deterministic oracle does not cover.
 3. **Train the anomaly head.** Load or train a Pi-DPM checkpoint on the live trajectory distribution so the Abnormal Gap Measure's data term is real, not default-initialized.
-4. **Grow and stratify the golden set.** Three anchor cases prove the harness; a larger, stratified set (by domain, difficulty, region count) makes the pass-rate meaningful.
+4. **Grow and stratify the golden set further.** Eight cases (four rendezvous, a disjoint-window negative control, two prism, one denial-gap) now exercise the harness; a larger, stratified set (by domain, difficulty, region count) toward 20+ cases makes p95 and the pass-rate fully meaningful.
 
-**Honesty rails (stated in the paper and on the site):** GeoTrace-Agent is a research-engineering blueprint with production-shaped architecture. The efficiency numbers are reproduced from a live golden-set run and a cache ablation (checked in under `evaluation/`), on a small 3-query golden set; the in-flight tool deduplicator is implemented but not yet wired into the run path. It is not running at production traffic.
+**Honesty rails (stated in the paper and on the site):** GeoTrace-Agent is a research-engineering blueprint with production-shaped architecture. The efficiency numbers are reproduced from live golden-set runs and a cache ablation (checked in under `evaluation/`), on an 8-query golden set (pass-rate 75-100% across runs); the in-flight tool deduplicator is implemented but not yet wired into the run path. It is not running at production traffic.
