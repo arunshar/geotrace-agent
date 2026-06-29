@@ -113,6 +113,28 @@ PRESETS = {
         ],
         "domain": "vessel",
     },
+    "Coverage-gap on a vessel track": {
+        "question": ("VESSEL-1234 reported AIS along the Aleutian shelf on 2026-01-15, "
+                     "then went dark for about two hours. Audit its track for a coverage "
+                     "gap consistent with signal denial and score how abnormal it is."),
+        "anchors": [
+            (56.05, -162.10, "2026-01-15T06:00:00Z"),
+            (56.34, -161.42, "2026-01-15T08:46:00Z"),
+        ],
+        "domain": "vessel",
+        # An 8-ping AIS track: ~8 min between pings, then a ~2-hour blackout
+        # (06:32 -> 08:30) the gap detector flags as one abnormal gap.
+        "track": [
+            (56.05, -162.10, "2026-01-15T06:00:00Z"),
+            (56.07, -162.06, "2026-01-15T06:08:00Z"),
+            (56.09, -162.02, "2026-01-15T06:16:00Z"),
+            (56.11, -161.98, "2026-01-15T06:24:00Z"),
+            (56.13, -161.94, "2026-01-15T06:32:00Z"),
+            (56.30, -161.50, "2026-01-15T08:30:00Z"),
+            (56.32, -161.46, "2026-01-15T08:38:00Z"),
+            (56.34, -161.42, "2026-01-15T08:46:00Z"),
+        ],
+    },
 }
 
 
@@ -196,7 +218,8 @@ def _mobr_to_geojson(prism: Prism) -> dict:
     return mapping(prism.mobr())
 
 
-async def _run(state: dict[str, Any], q: QueryIn) -> dict[str, Any]:
+async def _run(state: dict[str, Any], q: QueryIn,
+               track: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     plan = await state["planner"].plan(q, ConversationState())
     results: dict[str, Any] = {}
     prisms: list[Prism] = []
@@ -209,7 +232,11 @@ async def _run(state: dict[str, Any], q: QueryIn) -> dict[str, Any]:
                 prisms.append(prism_res.prism)
                 results[node.id] = prism_res
             elif node.kind is PlanNodeKind.GAPS:
-                gap_out = await state["gap"].detect(node.inputs)
+                gap_inputs = dict(node.inputs)
+                if track:  # demo presets can supply a real multi-point track to audit
+                    gap_inputs["trajectory"] = track
+                    gap_inputs.setdefault("domain", q.domain)
+                gap_out = await state["gap"].detect(gap_inputs)
                 gaps.extend(gap_out)
                 results[node.id] = gap_out
             elif node.kind in (PlanNodeKind.TGARD, PlanNodeKind.DC_TGARD):
@@ -245,6 +272,7 @@ async def _run(state: dict[str, Any], q: QueryIn) -> dict[str, Any]:
         "gaps": gaps,
         "regions": regions,
         "results": results,
+        "track": track,
     }
 
 
@@ -307,8 +335,15 @@ if run:
         st.error(f"Bad input: {exc}")
         st.stop()
 
+    track = None
+    if preset.get("track"):
+        track = [
+            {"lat": float(la), "lon": float(lo), "t": _parse_t(ti)}
+            for (la, lo, ti) in preset["track"]
+        ]
+
     with st.spinner("Running orchestrator..."):
-        out = _event_loop().run_until_complete(_run(state, q))
+        out = _event_loop().run_until_complete(_run(state, q, track=track))
 
     st.session_state["last_out"] = out
     st.session_state["last_q"] = q
@@ -327,7 +362,7 @@ try:
 
     centroid_lat = sum(a.lat for a in q.anchors) / len(q.anchors)
     centroid_lon = sum(a.lon for a in q.anchors) / len(q.anchors)
-    m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=8, tiles="cartodbpositron")
+    m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=6, tiles="cartodbpositron")
     # CircleMarker (vector) instead of folium.Marker, whose default PNG icon is
     # blocked by the Hugging Face Space sandbox and renders as a broken image.
     for idx, anchor in enumerate(q.anchors, start=1):
@@ -362,6 +397,28 @@ try:
         folium.GeoJson(gap.coverage_polygon_geojson, name=f"Gap {idx} coverage",
                        style_function=lambda _f: {"color": "#f59e0b", "weight": 2, "fillOpacity": 0.2}
                        ).add_to(m)
+    # Reported track (the multi-point AIS path); the blackout shows as the long
+    # straight segment, and the gap detector's amber coverage polygon sits over it.
+    if out.get("track"):
+        pts = [[p["lat"], p["lon"]] for p in out["track"]]
+        folium.PolyLine(pts, color="#6b7280", weight=2, opacity=0.85,
+                        tooltip="Reported track").add_to(m)
+        for i, p in enumerate(pts, start=1):
+            folium.CircleMarker(p, radius=3, color="#374151", weight=1, fill=True,
+                                fill_color="#9ca3af", fill_opacity=0.95,
+                                tooltip=f"ping {i}").add_to(m)
+
+    # Frame the view on the computed geometry so the prism is visible without a
+    # manual zoom-out.
+    fit: list[list[float]] = []
+    for prism in out["prisms"]:
+        minx, miny, maxx, maxy = prism.ellipse_polygon().bounds  # lon, lat
+        fit += [[miny, minx], [maxy, maxx]]
+    if out.get("track"):
+        fit += [[p["lat"], p["lon"]] for p in out["track"]]
+    if fit:
+        m.fit_bounds(fit, padding=(25, 25))
+
     folium.LayerControl(collapsed=False).add_to(m)
     with map_box:
         st_folium(m, width=720, height=480, returned_objects=[])

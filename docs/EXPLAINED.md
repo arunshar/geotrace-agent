@@ -131,7 +131,7 @@ The other agents (`space_time_reasoner.py`, `gap_detector.py`, `rendezvous_finde
 
 ## 4. The demo, and how to read it
 
-The Hugging Face Space (`spaces/hf-demo/streamlit_app.py`) is the system in miniature, CPU-only, no database. **Sidebar:** pick a preset (rendezvous / gap audit / prism-only), edit the question, the vessel anchors (lat, lon, time), and a budget; click Run. **Main panel, four views of the same run:**
+The Hugging Face Space (`spaces/hf-demo/streamlit_app.py`) is the system in miniature, CPU-only, no database. **Sidebar:** pick a preset (rendezvous / gap audit / prism-only / coverage-gap on a track), edit the question, the vessel anchors (lat, lon, time), and a budget; click Run. **Main panel, four views of the same run:**
 
 1. **Chain of thought (typed PlanGraph)** , the plan rendered as a flowchart. This is the agent's "program."
 2. **Map** , the space-time prism ellipses, their bounding rectangles, and (in green) the candidate rendezvous region. This is the geometry the kernel computed.
@@ -142,7 +142,26 @@ The panel shows the *machinery* (plan + map + JSON) rather than a single narrate
 
 ---
 
-## 5. The full paper, section by section
+## 5. What the demo shows, preset by preset (a live read)
+
+Running the presets against the live planner (Claude Sonnet 4.6) is the fastest way to see the design decisions act. The thing to watch is that **the same system emits a different typed plan for each question**, which is the whole point of 2.1.
+
+- **Prism-only** (a flat ask). The minimum plan, `prism.compute -> summarize`, two nodes. One prism, no gap detector, no validator step. Cheapest run, about $0.008 (~745 tokens in, ~379 out). It proves the planner does not pad: a simple question gets a simple program.
+- **Trajectory-gap audit** (two anchors only). A four-node plan, `prism.compute -> gaps.detect -> validate.kinematic -> summarize`. One prism, and **zero gaps**, because the input is a single anchor pair, not a track; gap detection looks for an abnormal jump *between consecutive samples*, and two points have no interior to inspect. The agent reasoned correctly; the input simply contains no gap. About $0.016.
+- **Coverage-gap on a vessel track** (the input that makes it light up). The same four-node shape, but fed an eight-ping AIS track with a deliberate ~2-hour blackout in the middle. The detector finds **one abnormal gap** (118 minutes, 33 km) and scores it with the Abnormal Gap Measure, `AGM = lambda*(1 - P_phys) + (1 - lambda)*P_data` with `lambda = 0.6`; here P_phys = 1.00 (the jump is kinematically plausible at vessel speed) and P_data = 0.86 (off the normal coverage cadence), for an **AGM of 0.345**, and the map paints the coverage polygon over the blackout in amber. This is the preset that actually exercises STAGD-DRM and the AGM, and it makes the row above concrete: *the detector is only as informative as the trajectory you feed it.*
+- **Rendezvous between two vessels** (two anchor pairs). The largest plan, five nodes: two `prism.compute`, then `rendezvous.dc_tgard` to intersect the two reachable envelopes, then `validate.kinematic`, then `summarize`. Result: **one rendezvous region**, method DC-TGARD, `kinematic_pass: true`, confidence about 0.28. The green polygon is the set of points where the two vessels *could* have met; the modest confidence honestly reflects a small envelope overlap. Most expensive, about $0.020.
+
+**The cross-cutting reads.** (1) Four questions, four distinct PlanGraph shapes (2, 4, 4, 5 nodes): the typed planner routes by intent, it is not a fixed template. (2) Cost is attributed per query from the stage ledger and scales with plan complexity ($0.008 < $0.016 < $0.020); a repeated query drops to zero LLM cost on a cache hit. (3) The validator gates: a region is returned only when one is both found and physically feasible, and zero otherwise, never a plausible-but-impossible answer.
+
+**Worst cases and honest caveats.**
+- **Empty by construction, not by failure.** The two-anchor gap audit returns no gaps, and the prism-only and gap presets return no regions. That is correct: there is nothing to find in those inputs. The populated panels are the rendezvous region and the track-gap polygon, where the input actually contains the thing being detected.
+- **Passing the gate is not high confidence.** The rendezvous region clears the hard kinematic gate yet scores ~0.28. Passing means *physically possible*, not *likely*; confidence is a separate, softer signal, and conflating the two would overclaim.
+- **The anomaly term is a placeholder.** The AGM's P_data (the Pi-DPM term) runs on a default-initialized head unless a trained checkpoint is loaded, so today the score leans on the kinematic term P_phys. Training that head on the live trajectory distribution is item 3 of section 7.
+- **Illustrative, not powered.** These are single runs, not a benchmark; the reproduced cost numbers come from a 3-query golden set. The honesty rails in section 7 apply.
+
+---
+
+## 6. The full paper, section by section
 
 The README is the NeurIPS-style paper. Map of where each idea is detailed:
 
@@ -154,7 +173,7 @@ The README is the NeurIPS-style paper. Map of where each idea is detailed:
 
 ---
 
-## 6. What evaluation still needs doing (the next phase)
+## 7. What evaluation still needs doing (the next phase)
 
 Stated plainly so the work is clear:
 

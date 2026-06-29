@@ -76,6 +76,7 @@
         <a class="button" href="https://arunshar.com/projects/geotrace-agent/"><span class="icon"><i class="fas fa-file-lines"></i></span><span>Full paper</span></a>
         <a class="button" href="https://huggingface.co/spaces/Arun0808/geotrace-agent"><span class="icon">&#129303;</span><span>Live Demo</span></a>
         <a class="button" href="https://github.com/arunshar/geotrace-agent/tree/main/evaluation"><span class="icon"><i class="fas fa-vial-circle-check"></i></span><span>Evaluation</span></a>
+        <a class="button" href="https://github.com/arunshar/geotrace-agent/blob/main/docs/EXPLAINED.md"><span class="icon"><i class="fas fa-book-open"></i></span><span>Explained</span></a>
         <a class="button" href="https://arunshar.com"><span class="icon"><i class="fas fa-graduation-cap"></i></span><span>Publications</span></a>
       </div>
 
@@ -336,6 +337,22 @@
       <li>returns the answer, the region polygon, a full trace id, and the cost.</li>
     </ol>
     <p>The <a href="https://huggingface.co/spaces/Arun0808/geotrace-agent">live demo</a> shows exactly this: the typed PlanGraph, a map of the prisms and the rendezvous region, the validator verdict, and the token cost. It runs CPU-only and falls back to a deterministic plan when no LLM key is set, so the geometry is always inspectable.</p>
+  </div>
+</section>
+
+<!-- ===================== DEMO FINDINGS ===================== -->
+<section class="section">
+  <div class="container narrow">
+    <h2 class="sec">What the demo shows (a live read)</h2>
+    <p>On Claude Sonnet 4.6, the same system emits a different typed plan for each question. Four presets, four plan shapes:</p>
+    <div class="feat">
+      <div class="card"><h4>Prism only</h4><p>Minimal 2-node plan (compute &rarr; summarize). One prism, no validator step, ~$0.008. The planner does not pad a simple ask.</p></div>
+      <div class="card"><h4>Gap audit (two anchors)</h4><p>4-node plan, but <b>zero gaps</b>: a single anchor pair has no interior to inspect. Correct, not a failure. ~$0.016.</p></div>
+      <div class="card"><h4>Coverage-gap on a track</h4><p>An 8-ping AIS track with a ~2-hour blackout: the detector flags <b>one abnormal gap</b> (118 min, 33 km), AGM 0.345, and paints the coverage polygon. STAGD-DRM and the AGM, lit up.</p></div>
+      <div class="card"><h4>Rendezvous (two vessels)</h4><p>Largest 5-node plan with DC-TGARD: <b>one feasible region</b>, kinematic_pass true, confidence ~0.28. ~$0.020, the priciest run.</p></div>
+    </div>
+    <p>The cross-cutting reads: the typed planner routes by intent (2, 4, 4, 5 nodes), cost is attributed per query from the stage ledger and scales with plan complexity, and the validator returns a region only when one is both found and physically feasible.</p>
+    <p class="lead"><b>Honest caveats.</b> Empty panels are correct when the input contains nothing to detect; passing the kinematic gate means physically possible, not likely (hence the ~0.28 confidence); the AGM's data term runs on a default-initialized Pi-DPM head until a checkpoint is trained; and these are illustrative single runs, not a powered benchmark. Full walkthrough in the <a href="https://github.com/arunshar/geotrace-agent/blob/main/docs/EXPLAINED.md">design notes (Explained)</a>.</p>
   </div>
 </section>
 
