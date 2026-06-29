@@ -265,7 +265,7 @@ with col2:
     json_box = st.empty()
 
 
-if not run:
+if not run and "last_out" not in st.session_state:
     st.info(
         "Pick a preset and click **Run**. The planner emits a typed PlanGraph "
         "(not free-form prose), the geometric kernel computes a Hägerstrand "
@@ -281,29 +281,40 @@ if not run:
 # ---------------------------------------------------------------------------
 
 state = _bootstrap()
-try:
-    anchors = [
-        Anchor(lat=float(a_lat), lon=float(a_lon), t=_parse_t(a_t)),
-        Anchor(lat=float(b_lat), lon=float(b_lon), t=_parse_t(b_t)),
-    ]
-    if use_second_pair:
-        anchors.extend([
-            Anchor(lat=float(c_lat), lon=float(c_lon), t=_parse_t(c_t)),
-            Anchor(lat=float(d_lat), lon=float(d_lon), t=_parse_t(d_t)),
-        ])
-    q = QueryIn(
-        question=question,
-        domain=domain,
-        anchors=anchors,
-        budget=Budget(max_tokens=int(max_tokens), max_tools=int(max_tools), max_seconds=float(max_seconds)),
-    )
-except Exception as exc:
-    st.error(f"Bad input: {exc}")
-    st.stop()
 
+# Compute only on a real Run click, then persist the result so the dashboard
+# survives the reruns that Streamlit triggers (e.g. when st_folium loads). On
+# those reruns `run` is False, so without this the page would fall through to
+# the intro st.stop() and the whole dashboard would vanish.
+if run:
+    try:
+        anchors = [
+            Anchor(lat=float(a_lat), lon=float(a_lon), t=_parse_t(a_t)),
+            Anchor(lat=float(b_lat), lon=float(b_lon), t=_parse_t(b_t)),
+        ]
+        if use_second_pair:
+            anchors.extend([
+                Anchor(lat=float(c_lat), lon=float(c_lon), t=_parse_t(c_t)),
+                Anchor(lat=float(d_lat), lon=float(d_lon), t=_parse_t(d_t)),
+            ])
+        q = QueryIn(
+            question=question,
+            domain=domain,
+            anchors=anchors,
+            budget=Budget(max_tokens=int(max_tokens), max_tools=int(max_tools), max_seconds=float(max_seconds)),
+        )
+    except Exception as exc:
+        st.error(f"Bad input: {exc}")
+        st.stop()
 
-with st.spinner("Running orchestrator..."):
-    out = _event_loop().run_until_complete(_run(state, q))
+    with st.spinner("Running orchestrator..."):
+        out = _event_loop().run_until_complete(_run(state, q))
+
+    st.session_state["last_out"] = out
+    st.session_state["last_q"] = q
+else:
+    out = st.session_state["last_out"]
+    q = st.session_state["last_q"]
 
 
 # Plan rendering
@@ -342,7 +353,7 @@ try:
                        ).add_to(m)
     folium.LayerControl(collapsed=False).add_to(m)
     with map_box:
-        st_folium(m, width=720, height=480)
+        st_folium(m, width=720, height=480, returned_objects=[])
 except Exception as exc:
     map_box.warning(f"Map renderer unavailable: {exc}")
 
