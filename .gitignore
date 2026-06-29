@@ -6,6 +6,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 evaluation/eval_results/
+evaluation/ablation_results/
+evaluation/validator_audit_results/
 data/raw/
 *.egg-info/
 dist/

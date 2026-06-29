@@ -1,0 +1,15 @@
+{
+  "n": 200,
+  "seed": 42,
+  "domain": "vessel",
+  "v_max_mps": 12.8611,
+  "threshold_mps": 13.504155,
+  "n_violating": 18,
+  "n_feasible": 182,
+  "true_positives": 18,
+  "false_negatives": 0,
+  "false_positives": 0,
+  "true_negatives": 182,
+  "detection_rate": 1.0,
+  "false_positive_rate": 0.0
+}

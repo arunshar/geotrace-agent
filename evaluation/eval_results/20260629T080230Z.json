@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "pass_rate": 0.6666666666666666,
+    "p50_latency_s": 27.949182395999742,
+    "p95_latency_s": null,
+    "mean_tokens": 2735.5
+  },
+  "rows": [
+    {
+      "id": "g-001",
+      "ok": true,
+      "latency_s": 34.099623499998415,
+      "tokens": 3560,
+      "cost_usd": 0.035904,
+      "n_regions": 2,
+      "confidence": 0.5716167586901076
+    },
+    {
+      "id": "g-002",
+      "ok": false,
+      "error": "prism.compute requires at least two anchors but none were provided"
+    },
+    {
+      "id": "g-003",
+      "ok": true,
+      "latency_s": 21.79874129200107,
+      "tokens": 1911,
+      "cost_usd": 0.016425000000000002,
+      "n_regions": 0,
+      "confidence": 0.95
+    }
+  ]
+}

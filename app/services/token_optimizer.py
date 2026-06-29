@@ -82,14 +82,14 @@ class TokenOptimizer:
         model: str | None = None,
         stop: list[str] | None = None,
     ) -> tuple[str, int, int, float, bool]:
-        if cache_key is not None:
+        if cache_key is not None and self.settings.semantic_cache_enabled:
             cached = await self.cache.get(("llm.text", *cache_key))
             if cached is not None:
                 return cached["text"], 0, 0, 0.0, True
 
         compressed = self._compress_prompt(prompt, budget_tokens)
         text, stats = await self._invoke(compressed, model=model, max_tokens=budget_tokens, stop=stop)
-        if cache_key is not None:
+        if cache_key is not None and self.settings.semantic_cache_enabled:
             await self.cache.set(("llm.text", *cache_key), {"text": text})
         return text, stats.tokens_in, stats.tokens_out, stats.cost_usd, False
 
@@ -102,7 +102,7 @@ class TokenOptimizer:
         budget_tokens: int = 1500,
         model: str | None = None,
     ) -> tuple[dict[str, Any], int, int, float, bool]:
-        if cache_key is not None:
+        if cache_key is not None and self.settings.semantic_cache_enabled:
             cached = await self.cache.get(("llm.json", *cache_key))
             if cached is not None:
                 return cached["payload"], 0, 0, 0.0, True
@@ -131,7 +131,7 @@ class TokenOptimizer:
                 cache_hit=False,
             )
             payload = json.loads(text)
-        if cache_key is not None:
+        if cache_key is not None and self.settings.semantic_cache_enabled:
             await self.cache.set(("llm.json", *cache_key), {"payload": payload})
         return payload, stats.tokens_in, stats.tokens_out, stats.cost_usd, False
 

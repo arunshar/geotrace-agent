@@ -1,0 +1,142 @@
+{
+  "summary": {
+    "cache_on": {
+      "cold": {
+        "n_ok": 3,
+        "mean_tokens": 2869.6666666666665,
+        "mean_cost_usd": 0.026272999999999998,
+        "total_cost_usd": 0.078819,
+        "cache_hit_stages": 1
+      },
+      "warm": {
+        "n_ok": 3,
+        "mean_tokens": 0,
+        "mean_cost_usd": 0.0,
+        "total_cost_usd": 0.0,
+        "cache_hit_stages": 4
+      }
+    },
+    "cache_off": {
+      "cold": {
+        "n_ok": 2,
+        "mean_tokens": 2529,
+        "mean_cost_usd": 0.023355,
+        "total_cost_usd": 0.04671,
+        "cache_hit_stages": 0
+      },
+      "warm": {
+        "n_ok": 3,
+        "mean_tokens": 2329.6666666666665,
+        "mean_cost_usd": 0.021633,
+        "total_cost_usd": 0.064899,
+        "cache_hit_stages": 1
+      }
+    },
+    "repeat_cost_saving_frac": 1.0,
+    "repeat_token_saving_frac": 1.0
+  },
+  "rows": {
+    "on_cold": [
+      {
+        "id": "g-001",
+        "ok": true,
+        "latency_s": 27.13277070800177,
+        "tokens": 3083,
+        "cost_usd": 0.030201,
+        "cache_hit_stages": 0
+      },
+      {
+        "id": "g-002",
+        "ok": true,
+        "latency_s": 33.70820425000056,
+        "tokens": 3676,
+        "cost_usd": 0.033108,
+        "cache_hit_stages": 1
+      },
+      {
+        "id": "g-003",
+        "ok": true,
+        "latency_s": 17.258992792001663,
+        "tokens": 1850,
+        "cost_usd": 0.01551,
+        "cache_hit_stages": 0
+      }
+    ],
+    "on_warm": [
+      {
+        "id": "g-001",
+        "ok": true,
+        "latency_s": 0.006070542000088608,
+        "tokens": 0,
+        "cost_usd": 0.0,
+        "cache_hit_stages": 1
+      },
+      {
+        "id": "g-002",
+        "ok": true,
+        "latency_s": 0.0005667919976986013,
+        "tokens": 0,
+        "cost_usd": 0.0,
+        "cache_hit_stages": 2
+      },
+      {
+        "id": "g-003",
+        "ok": true,
+        "latency_s": 0.0005443749978439882,
+        "tokens": 0,
+        "cost_usd": 0.0,
+        "cache_hit_stages": 1
+      }
+    ],
+    "off_cold": [
+      {
+        "id": "g-001",
+        "ok": true,
+        "latency_s": 29.493844458997046,
+        "tokens": 3037,
+        "cost_usd": 0.028755,
+        "cache_hit_stages": 0
+      },
+      {
+        "id": "g-002",
+        "ok": false,
+        "error": "prism.compute requires at least two anchors but none were provided"
+      },
+      {
+        "id": "g-003",
+        "ok": true,
+        "latency_s": 22.12261454200052,
+        "tokens": 2021,
+        "cost_usd": 0.017955,
+        "cache_hit_stages": 0
+      }
+    ],
+    "off_warm": [
+      {
+        "id": "g-001",
+        "ok": true,
+        "latency_s": 27.59739708300185,
+        "tokens": 3020,
+        "cost_usd": 0.029088000000000003,
+        "cache_hit_stages": 0
+      },
+      {
+        "id": "g-002",
+        "ok": true,
+        "latency_s": 20.506065959001717,
+        "tokens": 2007,
+        "cost_usd": 0.018753,
+        "cache_hit_stages": 1
+      },
+      {
+        "id": "g-003",
+        "ok": true,
+        "latency_s": 19.243901124998956,
+        "tokens": 1962,
+        "cost_usd": 0.017058,
+        "cache_hit_stages": 0
+      }
+    ]
+  },
+  "model": "claude-sonnet-4-6"
+}

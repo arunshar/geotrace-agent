@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     vehicle_v_max_kmh: float = Field(130.0, gt=0)
 
     # cache
+    semantic_cache_enabled: bool = True
     semantic_cache_ttl_s: int = 3600
     semantic_cache_similarity: float = 0.92
 
