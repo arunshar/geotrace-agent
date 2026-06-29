@@ -328,8 +328,19 @@ try:
     centroid_lat = sum(a.lat for a in q.anchors) / len(q.anchors)
     centroid_lon = sum(a.lon for a in q.anchors) / len(q.anchors)
     m = folium.Map(location=[centroid_lat, centroid_lon], zoom_start=8, tiles="cartodbpositron")
+    # CircleMarker (vector) instead of folium.Marker, whose default PNG icon is
+    # blocked by the Hugging Face Space sandbox and renders as a broken image.
     for idx, anchor in enumerate(q.anchors, start=1):
-        folium.Marker([anchor.lat, anchor.lon], tooltip=f"Anchor {idx}").add_to(m)
+        folium.CircleMarker(
+            [anchor.lat, anchor.lon],
+            radius=6,
+            color="#111827",
+            weight=2,
+            fill=True,
+            fill_color="#ef4444",
+            fill_opacity=0.9,
+            tooltip=f"Anchor {idx} ({anchor.lat:.3f}, {anchor.lon:.3f})",
+        ).add_to(m)
 
     colors = ["#3366ff", "#cc3300", "#7c3aed", "#0f766e"]
     for idx, prism in enumerate(out["prisms"], start=1):
