@@ -43,6 +43,20 @@ st.set_page_config(page_title="GeoTrace-Agent", page_icon="🛰️", layout="wid
 
 
 @st.cache_resource(show_spinner=False)
+def _event_loop() -> asyncio.AbstractEventLoop:
+    """One persistent event loop, reused across Streamlit reruns.
+
+    Streamlit reruns the whole script on every interaction. Calling
+    ``asyncio.run`` each time creates and then closes a fresh loop, but the
+    cached httpx.AsyncClient lives on across reruns, so on the second run it
+    tries to close connections bound to the first (now closed) loop and raises
+    ``RuntimeError: Event loop is closed``. Keeping a single loop alive and
+    running everything on it removes that mismatch.
+    """
+    return asyncio.new_event_loop()
+
+
+@st.cache_resource(show_spinner=False)
 def _bootstrap() -> dict[str, Any]:
     """Build a single in-process copy of the agent stack."""
 
@@ -51,7 +65,7 @@ def _bootstrap() -> dict[str, Any]:
         os.environ["GT_ANTHROPIC_API_KEY"] = os.environ["ANTHROPIC_API_KEY"]
 
     settings = get_settings()
-    cache = asyncio.run(SemanticCache.connect(settings))
+    cache = _event_loop().run_until_complete(SemanticCache.connect(settings))
     token_opt = TokenOptimizer(settings, cache=cache)
     planner = PlannerAgent(settings, token_opt)
     st_reasoner = SpaceTimeReasoner(settings)
@@ -206,7 +220,7 @@ async def _run(state: dict[str, Any], q: QueryIn) -> dict[str, Any]:
                 candidates = [
                     r
                     for d in node.deps
-                    for r in (results.get(d) or [])
+                    for r in (results.get(d) if isinstance(results.get(d), (list, tuple)) else [])
                     if isinstance(r, RendezvousRegion)
                 ]
                 results[node.id] = await state["val"].validate(candidates, domain=q.domain)
@@ -289,7 +303,7 @@ except Exception as exc:
 
 
 with st.spinner("Running orchestrator..."):
-    out = asyncio.run(_run(state, q))
+    out = _event_loop().run_until_complete(_run(state, q))
 
 
 # Plan rendering
