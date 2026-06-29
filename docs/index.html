@@ -197,7 +197,7 @@
     <div class="feat">
       <div class="card"><h4>Auditable reasoning</h4><p>A typed DAG, not prose. Every step has a schema, dependencies, and a token budget; the whole plan is replayable.</p></div>
       <div class="card"><h4>Physical correctness</h4><p>A space-time prism is the ground truth for what a mover can reach. Infeasible answers are rejected, not explained away.</p></div>
-      <div class="card"><h4>Measured efficiency</h4><p>A three-layer token and tool-cost stack, instrumented end to end by a per-stage cost ledger.</p></div>
+      <div class="card"><h4>Measured efficiency</h4><p>A token and tool-cost stack (adaptive prompt compression plus a hybrid exact + semantic cache), instrumented end to end by a per-stage cost ledger.</p></div>
     </div>
   </div>
 </section>
@@ -213,7 +213,7 @@
     <p>The geometric truth lives in a H&auml;gerstrand prism kernel (geo-ellipses, minimum orthogonal bounding rectangles, dynamic region merge). Specialized agents embed my prior research as deterministic tools: a <b>GapDetector</b> extending STAGD with dynamic region merge and an Abnormal Gap Measure, and a <b>RendezvousFinder</b> extending TGARD and the dual-convergence DC-TGARD variant with bi-directional pruning. The prism kernel is exposed as a <b>Model Context Protocol</b> server, and the agent itself speaks <b>JSON-RPC 2.0 Agent-to-Agent</b> with a published capability card.</p>
 
     <h3 class="sub">Three-layer efficiency stack</h3>
-    <p>Every LLM call passes a single <span class="kbd">TokenOptimizer</span> choke-point: adaptive prompt compression, prefix-cache-aware assembly, structured-output enforcement, and a per-call token clamp. Tool spend is reduced by parallel-safe execution, in-flight tool-call deduplication, and a hybrid exact-plus-semantic cache.</p>
+    <p>Every LLM call passes a single <span class="kbd">TokenOptimizer</span> choke-point: adaptive prompt compression, prefix-cache-aware assembly, structured-output enforcement, and a per-call token clamp. Tool spend is reduced by parallel-safe execution and a hybrid exact-plus-semantic cache; an in-flight tool-call deduplicator is implemented but not yet wired into the run path.</p>
   </div>
 </section>
 
@@ -300,16 +300,26 @@
 <section class="section">
   <div class="container narrow">
     <h2 class="sec">Efficiency, measured by the cost ledger</h2>
-    <p>The three-layer stack reduces per-query token spend. The numbers below come from end-to-end golden-set and ablation runs, attributed per stage by the cost ledger.</p>
+    <p>Two active layers (adaptive prompt compression and a hybrid exact + semantic cache) drive efficiency. The numbers below are from a live golden-set run and a cache ablation on Claude Sonnet 4.6, attributed per stage by the cost ledger.</p>
     <table class="tbl">
-      <thead><tr><th>Configuration</th><th class="num">p50 (s)</th><th class="num">tokens / query</th><th class="num">USD / query</th></tr></thead>
+      <thead><tr><th>Metric (live golden-set run, Sonnet 4.6)</th><th class="num">Value</th></tr></thead>
       <tbody>
-        <tr><td>Full pipeline</td><td class="num">1.9</td><td class="num">4,210</td><td class="num">0.034</td></tr>
-        <tr><td>Without semantic cache</td><td class="num">2.6</td><td class="num">6,980</td><td class="num">0.054</td></tr>
-        <tr><td>Without tool dedup</td><td class="num">2.1</td><td class="num">4,980</td><td class="num">0.039</td></tr>
+        <tr><td>Pass rate</td><td class="num">66.7% (2 of 3)</td></tr>
+        <tr><td>Mean tokens / query</td><td class="num">~2,736</td></tr>
+        <tr><td>Mean cost / query (USD)</td><td class="num">~0.026</td></tr>
+        <tr><td>p50 latency (s)</td><td class="num">~28</td></tr>
       </tbody>
     </table>
-    <div class="callout honest"><b>Honest framing.</b> These are <b>illustrative pipeline numbers</b> (about a 40% per-query token reduction from the full stack) demonstrating the instrumentation; they have not yet been independently reproduced at scale. The point of the system is that the instrumentation to measure this in production ships with it, the cost ledger and OpenTelemetry traces are real and inspectable in the repository.</div>
+    <p>Cache ablation: the exact/semantic response cache measured on identical repeats.</p>
+    <table class="tbl">
+      <thead><tr><th>Config</th><th class="num">tokens / query</th><th class="num">USD / query</th><th class="num">latency</th></tr></thead>
+      <tbody>
+        <tr><td>cache on, cold</td><td class="num">2,870</td><td class="num">0.026</td><td class="num">~20-34 s</td></tr>
+        <tr><td>cache on, warm repeat</td><td class="num">0</td><td class="num">0.000</td><td class="num">sub-ms</td></tr>
+        <tr><td>cache off, warm (control)</td><td class="num">2,330</td><td class="num">0.022</td><td class="num">~20-28 s</td></tr>
+      </tbody>
+    </table>
+    <div class="callout honest"><b>Honest framing.</b> These are <b>reproduced numbers</b> from a live run, checked in under <span class="kbd">evaluation/eval_results/</span> and <span class="kbd">evaluation/ablation_results/</span>. The golden set is small (3 queries) and latency reflects live, sequential API round-trips. The cache eliminates LLM cost on repeated queries; on novel queries it does not fire, so there is no blanket per-query reduction. An in-flight tool deduplicator is implemented but not yet wired into the run path, so it is excluded from these numbers. The open piece is an LLM judge for the free-text summary.</div>
   </div>
 </section>
 
@@ -350,7 +360,7 @@
     <h2 class="sec">Honest scope</h2>
     <ul>
       <li>GeoTrace-Agent is a research-engineering blueprint with production-shaped architecture (FastAPI, Postgres/PostGIS, Redis, Chroma, an OpenTelemetry collector, Tempo, Langfuse, a Kubernetes path), demonstrated as a public repository and a live CPU demo, not a system running at production traffic.</li>
-      <li>The efficiency numbers are illustrative of the pipeline and not yet independently reproduced; the instrumentation to measure them ships with the system.</li>
+      <li>The efficiency numbers are reproduced from a live golden-set run and a cache ablation (checked in under <span class="kbd">evaluation/</span>); the golden set is small and the in-flight tool deduplicator is implemented but not yet wired into the run path.</li>
       <li>The anomaly data term calls a Pi-DPM with a small default config; a production deployment should load a checkpoint trained on the live trajectory distribution.</li>
     </ul>
   </div>
@@ -376,7 +386,7 @@
      <a href="https://github.com/arunshar/geotrace-agent">github.com/arunshar/geotrace-agent</a> &middot;
      <a href="https://arunshar.com/projects/geotrace-agent/">full paper</a> &middot;
      <a href="https://huggingface.co/spaces/Arun0808/geotrace-agent">live demo</a></p>
-  <p style="margin-top:.35rem;">Academic project-page layout (Bulma), fonts matched to the reference site (Montserrat + Noto Sans). Research-engineering blueprint, numbers illustrative.</p>
+  <p style="margin-top:.35rem;">Academic project-page layout (Bulma), fonts matched to the reference site (Montserrat + Noto Sans). Research-engineering blueprint; efficiency numbers reproduced from a live run.</p>
 </footer>
 
 </body>

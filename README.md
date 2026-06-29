@@ -51,7 +51,7 @@ flowchart LR
 
 # Abstract
 
-We present **GeoTrace-Agent**, a production-grade multi-agent framework that combines deterministic time-geographic computation with large-language-model planning to answer natural-language questions over heterogeneous trajectory data. A typed `PlanGraph` encodes the agent's chain of thought as a directed acyclic graph of statically-validated nodes rather than free-form prose, making the reasoning auditable, replayable, and parallelizable. A central orchestrator runs the graph under a hard token, tool-call, and wallclock budget, calls into a Hägerstrand space-time prism kernel for the geometric truth (geo-ellipses, minimum orthogonal bounding rectangles, dynamic-region-merge unions), and dispatches specialized sub-agents that extend our prior STAGD/DRM gap detector and TGARD/DC-TGARD rendezvous finder. Three optimization layers, an adaptive prompt compressor, an in-flight tool deduplicator, and a hybrid exact + semantic cache, cut per-query token spend by approximately 40% on a golden evaluation set without harming region tightness. We expose the prism kernel as an MCP server and the agent itself over a JSON-RPC 2.0 A2A protocol with capability cards, making GeoTrace-Agent first-class for sibling agents and IDE plugins. A kinematic validator gated on a single-axle bicycle envelope guarantees that no region returned to a user is physically infeasible, and ambiguous traces feed a Postgres human-in-the-loop queue whose verdicts can later seed direct-preference-optimization datasets. We describe the system architecture, the typed-plan / token-budget / tool-cache mechanisms, and the geometric kernel; report golden-dataset latency and cost; and discuss limitations.
+We present **GeoTrace-Agent**, a production-grade multi-agent framework that combines deterministic time-geographic computation with large-language-model planning to answer natural-language questions over heterogeneous trajectory data. A typed `PlanGraph` encodes the agent's chain of thought as a directed acyclic graph of statically-validated nodes rather than free-form prose, making the reasoning auditable, replayable, and parallelizable. A central orchestrator runs the graph under a hard token, tool-call, and wallclock budget, calls into a Hägerstrand space-time prism kernel for the geometric truth (geo-ellipses, minimum orthogonal bounding rectangles, dynamic-region-merge unions), and dispatches specialized sub-agents that extend our prior STAGD/DRM gap detector and TGARD/DC-TGARD rendezvous finder. Two active optimization layers, an adaptive prompt compressor and a hybrid exact + semantic cache, hold per-query cost to about 0.026 USD (roughly 2,700 tokens) on a live golden-set run with Claude Sonnet 4.6; the exact-response cache drops a repeated query's LLM cost to zero. An in-flight tool deduplicator is implemented but not yet wired into the run path. We expose the prism kernel as an MCP server and the agent itself over a JSON-RPC 2.0 A2A protocol with capability cards, making GeoTrace-Agent first-class for sibling agents and IDE plugins. A kinematic validator gated on a single-axle bicycle envelope guarantees that no region returned to a user is physically infeasible, and ambiguous traces feed a Postgres human-in-the-loop queue whose verdicts can later seed direct-preference-optimization datasets. We describe the system architecture, the typed-plan / token-budget / tool-cache mechanisms, and the geometric kernel; report golden-dataset latency and cost; and discuss limitations.
 
 ---
 
@@ -67,14 +67,14 @@ We present **GeoTrace-Agent**, a multi-agent system that takes the opposite stan
 - A **RendezvousFinderAgent** extending TGARD and the dual-convergence DC-TGARD variant of Sharma et al. (2022a) with bi-directional pruning and ellipse-symmetry early stopping.
 - A **ValidatorAgent** that gates every region returned to the user on a single-axle kinematic-bicycle envelope (Kong et al., 2015).
 
-The orchestrator runs the PlanGraph under a hard *token, tool-call, and wallclock* budget. Three optimization layers, sketched in Section 4, drive efficiency: (i) adaptive prompt compression with prefix-cache-aware assembly (Anthropic, 2024b) and structured-output enforcement; (ii) tool-call deduplication of in-flight calls and a hybrid exact + semantic cache; and (iii) parallel-safe topo-layer execution of the PlanGraph. Every stage emits an OpenTelemetry span (OpenTelemetry Authors, 2024) with token-spend, cache-hit, and cost attributes, so an analyst can drill into any historical run.
+The orchestrator runs the PlanGraph under a hard *token, tool-call, and wallclock* budget. Optimization layers, sketched in Section 4, drive efficiency: (i) adaptive prompt compression with prefix-cache-aware assembly (Anthropic, 2024b) and structured-output enforcement; (ii) a hybrid exact + semantic cache; and (iii) parallel-safe topo-layer execution of the PlanGraph. An in-flight tool deduplicator (Section 4) is implemented but not yet wired into the run path. Every stage emits an OpenTelemetry span (OpenTelemetry Authors, 2024) with token-spend, cache-hit, and cost attributes, so an analyst can drill into any historical run.
 
 GeoTrace-Agent speaks the modern agent-protocol stack natively. The prism kernel is exposed as a Model Context Protocol (Anthropic, 2024c) server so any MCP-aware client can call `prism.compute` or `prism.intersect` without going through this app's HTTP surface; the agent itself advertises a capability card at `/a2a/.well-known/capabilities` and accepts JSON-RPC 2.0 Agent-to-Agent calls (Google, 2024), mirroring the cross-agent communication patterns recently popularized in enterprise multi-agent frameworks (Centific, 2025a, 2025b, 2025c). Ambiguous traces (validator-confidence below a tunable threshold) flow into a Postgres human-in-the-loop (HITL) queue whose reviewer verdicts can be exported as preference triples for downstream direct-preference optimization (Rafailov et al., 2023), closing the loop between agentic reasoning and reinforcement learning (see the sibling [Pi-GRPO](https://github.com/arunshar/pi-grpo) project).
 
 ## 1.1 Contributions
 
 1. A **typed PlanGraph** chain-of-thought representation that is statically validated, parallel-sortable, and replayable, with explicit per-node token and confidence priors.
-2. A **three-layer efficiency stack** (adaptive prompt compression, in-flight tool deduplication, hybrid exact + semantic cache) that reduces median per-query token spend by approximately 40% on the golden evaluation set. This ~40% figure is illustrative of the pipeline behavior and has not been independently reproduced; the cost/latency table in Section 5 is likewise illustrative.
+2. An **efficiency stack** with two active layers, adaptive prompt compression and a hybrid exact + semantic cache (an in-flight tool deduplicator is implemented but not yet wired into the run path). On a live golden-set run with Claude Sonnet 4.6 the full pipeline costs about 0.026 USD per query (roughly 2,700 tokens), and the exact-response cache drops a repeated query to zero LLM cost (cold to warm). The reproduced numbers and the cache ablation are checked in under `evaluation/eval_results/` and `evaluation/ablation_results/`.
 3. A **deterministic time-geographic kernel** integrating Hägerstrand prisms with the STAGD-DRM gap detector and the TGARD / DC-TGARD rendezvous finder, gated by a kinematic validator that guarantees physical feasibility of every returned region.
 4. A **first-class agent-protocol surface** (MCP for tools, JSON-RPC 2.0 A2A for inter-agent calls, OpenTelemetry traces, HITL queue) suitable for production deployment alongside enterprise multi-agent frameworks.
 
@@ -86,7 +86,7 @@ GeoTrace-Agent speaks the modern agent-protocol stack natively. The prism kernel
 
 **Multi-agent systems and human-in-the-loop.** Centific's recent line of work, LegalWiz for contradiction detection in legal documents (Centific, 2025a), ContraGen for enterprise contradictions (Centific, 2025b), and ART for action-based reasoning over EHRs (Centific, 2025c), codifies a multi-agent + HITL pattern in which specialized agents coordinate via remote-procedure calls and a human reviewer closes the loop. Other production agentic stacks (Wang et al., 2024; Xie et al., 2024; Hong et al., 2024; Jimenez et al., 2024) similarly emphasize agent specialization, evaluation, and observability. Our system inherits this pattern but pivots the domain from text to spatiotemporal trajectories and adds a deterministic geometric kernel as a first-class agent.
 
-**Token and tool optimization.** Prompt caching (Anthropic, 2024b; OpenAI, 2024c), semantic caching for LLM responses (Bang, 2023), KV-cache-aware decoding (Kwon et al., 2023), and structured-output-with-correction loops (OpenAI, 2024b) have separately reduced LLM cost. We unify these inside a single `TokenOptimizer` choke-point and add an in-flight tool deduplicator that collapses concurrent identical calls into one awaitable.
+**Token and tool optimization.** Prompt caching (Anthropic, 2024b; OpenAI, 2024c), semantic caching for LLM responses (Bang, 2023), KV-cache-aware decoding (Kwon et al., 2023), and structured-output-with-correction loops (OpenAI, 2024b) have separately reduced LLM cost. We unify these inside a single `TokenOptimizer` choke-point. An in-flight tool deduplicator that collapses concurrent identical calls into one awaitable is implemented in `app/services/tool_batcher.py` but is not yet wired into the orchestrator run path, so it is excluded from the measured efficiency numbers.
 
 **Agent protocols.** The Model Context Protocol (Anthropic, 2024c) standardizes JSON-RPC tool exposure between LLM clients and tool servers; the A2A protocol (Google, 2024) and capability-card discovery patterns standardize inter-agent calls. We adopt both and ship the prism kernel as an MCP server while exposing the orchestrator over A2A.
 
@@ -158,19 +158,21 @@ The prism kernel is exposed as a Model Context Protocol (Anthropic, 2024c) serve
 
 **Golden dataset.** We curated three anchor questions (`g-001` rendezvous, `g-002` gap audit, `g-003` prism only) and replay them through the orchestrator. Each item carries an `expected` block (region count bounds, allowed methods, required validator pass) that the offline evaluator checks. Results are written under `evaluation/eval_results/<timestamp>.{md,json}`.
 
-**Latency, tokens, cost.** Median and p95 latency, mean tokens per query, and mean USD cost per query when run end-to-end against the live planner with Claude Sonnet 4.6:
+**Latency, tokens, cost.** Live golden-set run, end to end against the planner with Claude Sonnet 4.6 (`evaluation/eval_results/20260629T080230Z.{md,json}`):
 
-| Configuration                       | p50 latency (s) | p95 latency (s) | tokens / query | cost USD / query |
-|-------------------------------------|----------------:|----------------:|---------------:|-----------------:|
-| Full pipeline                       |             1.9 |             3.4 |          4,210 |            0.034 |
-| Without semantic cache (ablation)   |             2.6 |             4.5 |          6,980 |            0.054 |
-| Without tool dedup (ablation)       |             2.1 |             3.7 |          4,980 |            0.039 |
+| Metric | Value |
+|---|---|
+| Pass rate | 66.7% (2 of 3) |
+| Mean tokens / query | ~2,736 |
+| Mean cost / query (USD) | ~0.026 |
+| p50 latency (s) | ~28 |
+| Per case | g-001: 3,560 tok, 0.036 USD, 34.1 s; g-003: 1,911 tok, 0.016 USD, 21.8 s |
 
-Numbers are illustrative of the pipeline behavior; production instrumentation ships with the system. The structural metric (region tightness) is the ratio of the rendezvous polygon area to the union MOBR area; smaller is tighter.
+The golden set is small (3 queries), so p95 (which needs at least 20 cases) is not reported, and g-002 is a non-deterministic planner mis-plan: the planner sometimes emits a `prism.compute` node for an anchorless gap query and trips the guardrail. Latency is dominated by live, sequential API round-trips. Region tightness (rendezvous polygon area over union MOBR area) is defined in the kernel but not scored by this run.
 
-**Ablation.** Removing the semantic cache raises mean tokens by ~66% and cost by ~59%; removing tool deduplication adds ~18% tokens. The two layers are complementary: deduplication catches in-run duplicates that the cross-run cache cannot anticipate.
+**Cache ablation** (`evaluation/ablation_results/20260629T080824Z.{md,json}`). The exact/semantic response cache is measured on identical repeats. Cold per-query cost is about 0.026 USD (~2,870 tokens); a warm repeat drops to zero tokens, zero cost, and sub-millisecond latency because the planner and summarizer are served from cache. With the cache disabled the warm repeat costs the same as the cold run (~0.022 USD), confirming the saving comes from the cache. The cache fires only on repeated or near-duplicate queries, so on novel queries it provides no saving and we make no blanket per-query reduction claim.
 
-**Validator audits.** On a stress slice of 50 random region candidates with synthetic timing perturbations, the validator caught 100% of regions whose required speed exceeded the per-domain envelope by more than 5%, raising `KinematicViolation` as designed.
+**Validator audits** (`evaluation/validator_audit_results/`). On 200 random vessel anchor pairs (seed 42), the kinematic gate raised `KinematicViolation` on 100% of pairs whose implied required speed exceeded the per-domain envelope by more than 5% (18 of 18), with zero false positives on the 182 feasible pairs. The gate is on the observations (consecutive-anchor reachability), not on a region's bounding-box diagonal, which is a set of meeting points rather than a path.
 
 # 6. Discussion and Limitations
 
@@ -184,7 +186,7 @@ GeoTrace-Agent is a research-engineering blueprint. Three caveats deserve naming
 
 # 7. Conclusion
 
-We presented GeoTrace-Agent, a multi-agent framework that grounds LLM-driven trajectory reasoning in deterministic time geography. Typed PlanGraph chain-of-thought, a three-layer efficiency stack, a Hägerstrand prism kernel with STAGD-DRM and DC-TGARD agents, a hard kinematic validator, MCP and A2A protocol surfaces, OpenTelemetry traceability, and a HITL queue together deliver a system that is auditable, efficient, and physically correct.
+We presented GeoTrace-Agent, a multi-agent framework that grounds LLM-driven trajectory reasoning in deterministic time geography. Typed PlanGraph chain-of-thought, an efficiency stack (adaptive prompt compression and a hybrid exact + semantic cache), a Hägerstrand prism kernel with STAGD-DRM and DC-TGARD agents, a hard kinematic validator, MCP and A2A protocol surfaces, OpenTelemetry traceability, and a HITL queue together deliver a system that is auditable, efficient, and physically correct.
 
 # References
 

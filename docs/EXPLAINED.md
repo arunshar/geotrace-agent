@@ -93,10 +93,10 @@ Each decision below is stated as **what, why, and what the alternative would hav
 **Why.** Cross-cutting concerns belong in one place. Budget, caching, retries, timeouts, and cost attribution are *uniform* because there is exactly one door every call walks through. The orchestrator can never overshoot the budget on a planner regression, because the clamp lives at the door.
 **Alternative cost.** Scattering LLM calls means scattering budget logic, cost accounting, and retry policy, which drift apart and leak spend.
 
-### 3.4 The three-layer efficiency stack
-**What.** (1) **Adaptive prompt compression**, prompts over a threshold are head-tail truncated with an elision marker. (2) **Hybrid semantic cache**, an exact-key lookup layered over a near-key embedding lookup, so identical anchor pairs return in O(1) and near-duplicate questions reuse prior answers. (3) **In-flight tool deduplication**, the `ToolBatcher` keys concurrent calls by `(tool, sha256(args))` and collapses duplicates into one awaitable.
-**Why.** These are *complementary*. Dedup catches duplicates within a single run that the cross-run cache cannot anticipate; the cache catches repeats across runs; compression shrinks each call. Together they cut per-query token spend by roughly 40% on the golden set. (See the honesty note in section 7, those numbers are illustrative.)
-**Alternative cost.** Any one layer alone leaves money on the table; the dedup-vs-cache distinction is the subtle part most systems miss.
+### 3.4 The efficiency stack
+**What.** (1) **Adaptive prompt compression**, prompts over a threshold are head-tail truncated with an elision marker. (2) **Hybrid semantic cache**, an exact-key lookup layered over a near-key embedding lookup, so identical anchor pairs return in O(1) and near-duplicate questions reuse prior answers. (3) **In-flight tool deduplication**, the `ToolBatcher` keys concurrent calls by `(tool, sha256(args))` and collapses duplicates into one awaitable; it is implemented but not yet wired into the orchestrator run path, so it does not contribute to the measured numbers.
+**Why.** The two active layers are complementary: the cache eliminates LLM cost on repeated or near-duplicate queries, and compression shrinks each call. On a live golden-set run with Claude Sonnet 4.6 the full pipeline costs about 0.026 USD per query (~2,736 tokens), and a repeated query drops to zero LLM cost on a cache hit (cold to warm; see `evaluation/eval_results/` and `evaluation/ablation_results/`). The cache does not fire on novel queries, so there is no blanket per-query reduction.
+**Alternative cost.** Any one layer alone leaves money on the table; the dedup-vs-cache distinction (in-run duplicates vs cross-run repeats) is the subtle part most systems miss.
 
 ### 3.5 The kinematic validator as a hard gate (and a subtle rationale)
 **What.** `app/agents/validator.py` is the last thing every region passes through. It enforces the Hagerstrand feasibility condition on the **observations**: consecutive anchors must be mutually reachable, `dist(A, B) <= v_max * (t_B - t_A)` (with a 5% tolerance). Failure raises `KinematicViolation`, surfaced as HTTP 422.
@@ -111,7 +111,7 @@ Each decision below is stated as **what, why, and what the alternative would hav
 
 ### 3.7 OpenTelemetry plus a per-stage cost ledger
 **What.** `observability/tracer.py` wraps every tool call in a span carrying `tool.name, cache_hit, cost_usd, tokens_in/out`; traces are **tail-sampled** (100% of errors, 1% of successes). `observability/cost_tracker.py` writes one row per `(trace_id, stage)`.
-**Why.** You cannot optimize what you cannot measure. Per-stage attribution is what made the efficiency work legible (the 40% number came from this ledger, not a guess). Tail sampling keeps every failure for debugging while bounding storage, the right default for an eval stack.
+**Why.** You cannot optimize what you cannot measure. Per-stage attribution is what made the efficiency work legible (the reproduced per-query cost and the cache cold-to-warm saving came from this ledger, not a guess). Tail sampling keeps every failure for debugging while bounding storage, the right default for an eval stack.
 **Alternative cost.** Aggregate metrics tell you the system is slow or expensive but not *where*; you cannot do targeted optimization or honest cost claims without per-stage traces.
 
 ### 3.8 Offline golden-set CI gate plus online drift monitor
@@ -167,7 +167,7 @@ The README is the NeurIPS-style paper. Map of where each idea is detailed:
 - Section 1 (Introduction) , the deterministic-first thesis and the typed-agent contributions.
 - Section 3 (System Architecture) , the request path and the four separated concerns (geometric truth, semantic reasoning, budgets, provenance).
 - Section 4 (Methods) , the typed PlanGraph (4.1), token optimization (4.2), tool optimization (4.3), the prism / ellipse / MOBR / DRM math (4.4), STAGD-DRM and TGARD / DC-TGARD (4.5), the S-KBM validator (4.6), MCP and A2A (4.7).
-- Section 5 (Experiments) , the golden dataset and the latency / token / cost table (illustrative).
+- Section 5 (Experiments) , the golden dataset and the latency / token / cost table (reproduced live; see `evaluation/eval_results/` and `evaluation/ablation_results/`).
 - Section 6 (Discussion) , the honest limitations.
 
 ---
@@ -176,12 +176,12 @@ The README is the NeurIPS-style paper. Map of where each idea is detailed:
 
 Stated plainly so the work is clear:
 
-1. **Reproduce the numbers.** Run `offline_eval` end to end with a live LLM key and commit the `evaluation/eval_results/<timestamp>.{md,json}` report plus the cost ledger, so the ~40% becomes a checked-in, reproducible artifact rather than an illustrative figure.
+1. **Reproduce the numbers (done).** `offline_eval` was run end to end with a live key on Claude Sonnet 4.6; the `evaluation/eval_results/<timestamp>.{md,json}` report, the cache ablation (`evaluation/ablation_results/`), and the validator audit (`evaluation/validator_audit_results/`) are checked in. Remaining: grow the golden set beyond 3 queries and wire the in-flight tool deduplicator into the run path.
 2. **Judge the free-text summary.** Add a calibrated LLM-as-judge (with a small human-labeled set) for the one part the deterministic oracle does not cover.
 3. **Train the anomaly head.** Load or train a Pi-DPM checkpoint on the live trajectory distribution so the Abnormal Gap Measure's data term is real, not default-initialized.
 4. **Grow and stratify the golden set.** Three anchor cases prove the harness; a larger, stratified set (by domain, difficulty, region count) makes the pass-rate meaningful.
 
-**Honesty rails (stated in the paper and on the site):** GeoTrace-Agent is a research-engineering blueprint with production-shaped architecture. The efficiency numbers are illustrative of the pipeline and not yet independently reproduced; the instrumentation to measure them ships with the system. It is not running at production traffic.
+**Honesty rails (stated in the paper and on the site):** GeoTrace-Agent is a research-engineering blueprint with production-shaped architecture. The efficiency numbers are reproduced from a live golden-set run and a cache ablation (checked in under `evaluation/`), on a small 3-query golden set; the in-flight tool deduplicator is implemented but not yet wired into the run path. It is not running at production traffic.
 
 ---
 
