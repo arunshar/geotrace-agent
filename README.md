@@ -1,6 +1,6 @@
 # GeoTrace-Agent
 
-> A Production Multi-Agent Framework for Spatiotemporal Reasoning with Hägerstrand Space-Time Prisms
+> A multi-agent framework for spatiotemporal reasoning that grounds LLM planning in deterministic time geography (Hägerstrand space-time prisms), with first-class agent evaluation, observability, and cost instrumentation.
 
 [![CI](https://github.com/arunshar/geotrace-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/arunshar/geotrace-agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -22,6 +22,7 @@ GeoTrace-Agent orchestrates a typed multi-agent pipeline (planner, space-time re
 | LaTeX source                 | [`paper/geotrace_agent_neurips.tex`](paper/geotrace_agent_neurips.tex) |
 | Hugging Face Space (demo)    | [`spaces/hf-demo/`](spaces/hf-demo/) |
 | Architecture deep-dive       | [`docs/architecture.md`](docs/architecture.md) |
+| Plain-language explainer (the why) | [`docs/EXPLAINED.md`](docs/EXPLAINED.md) |
 | API reference                | [`docs/api-reference.md`](docs/api-reference.md) |
 | Hard invariants              | [`CONTRIBUTING.md`](CONTRIBUTING.md#hard-invariants) |
 | Capability cards             | [`AGENTS.md`](AGENTS.md) |
