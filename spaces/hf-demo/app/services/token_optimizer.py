@@ -276,14 +276,21 @@ def _stub_response(prompt: str) -> str:
 
     if '"type": "object"' in prompt or "JSON" in prompt:
         question_l = _extract_question(prompt).lower()
-        if "coverage gap" in question_l or "signal denial" in question_l or "gap audit" in question_l:
+        if ("coverage gap" in question_l or "signal denial" in question_l
+                or "gap audit" in question_l or "went dark" in question_l):
+            # Full 4-node shape (prism -> gaps -> validate -> summarize) so the
+            # key-free demo matches the live planner: the map shows the reachable
+            # envelope alongside the detected gap. The demo injects the preset's
+            # real multi-point track into the gaps node at run time.
             return json.dumps({
-                "rationale": "stub: detect anomalous trajectory gap, then summarize",
+                "rationale": "stub: compute the prism, detect anomalous trajectory gaps, validate, summarize",
                 "nodes": [
+                    {"id": "p1", "kind": "prism.compute", "deps": [], "expected_tokens": 0,
+                     "confidence_prior": 0.8, "rationale": "reachable envelope over the track window"},
                     {
                         "id": "g1",
                         "kind": "gaps.detect",
-                        "deps": [],
+                        "deps": ["p1"],
                         "inputs": {
                             "domain": "vessel",
                             "coverage_threshold_s": 600,
@@ -297,7 +304,9 @@ def _stub_response(prompt: str) -> str:
                         "confidence_prior": 0.72,
                         "rationale": "local deterministic gap audit",
                     },
-                    {"id": "s1", "kind": "summarize", "deps": ["g1"], "expected_tokens": 200,
+                    {"id": "v1", "kind": "validate.kinematic", "deps": ["g1"], "expected_tokens": 0,
+                     "confidence_prior": 0.85, "rationale": "validate"},
+                    {"id": "s1", "kind": "summarize", "deps": ["p1", "g1", "v1"], "expected_tokens": 200,
                      "confidence_prior": 0.7, "rationale": "summarize"},
                 ],
             })
